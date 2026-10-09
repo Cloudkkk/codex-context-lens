@@ -54,10 +54,12 @@ Context Lens 是一个用于 macOS Codex / ChatGPT 桌面端的第三方本地�
 
 | 附件 | 内容与用途 |
 | --- | --- |
-| [`context-lens-plugin.zip`](https://github.com/Cloudkkk/codex-context-lens/releases/download/v0.2.10/context-lens-plugin.zip) | 独立单插件包，只有 `context-lens/`，其根目录包含 `plugin.json`、hook 和全部运行代码 |
+| [`context-lens-plugin.zip`](https://github.com/Cloudkkk/codex-context-lens/releases/download/v0.2.10/context-lens-plugin.zip) | 独立单插件归档，只有 `context-lens/`；用于检查、导出或手动配置本地来源，当前账户上传安装不会加载 hook |
 | [`codex-context-local.zip`](https://github.com/Cloudkkk/codex-context-lens/releases/download/v0.2.10/codex-context-local.zip) | 完整源码与本地 marketplace，用于桌面本地来源安装或开发；不要上传到「创建插件」单插件入口 |
 
-**使用截图中的「创建插件」上传入口**：选择 `context-lens-plugin.zip`，再点击「添加插件」。旧附件是整个仓库，不能作为单插件上传包。新包已验证目录结构与运行文件完整性；**这个上传入口是否会在当前桌面版本中部署并加载本机 hook，仍待实际安装验证**。创建成功后，请检查下面的 **设置 → Hooks → From Plugins**；只有本机 hook 被加载、信任并触发后，消息栏面板才会出现。
+**当前桌面账户上传安装无法自动启用面板。** 实际安装诊断已确认：从「创建插件」上传的包进入 `created-by-me-remote` 来源，客户端报告 `has_skills: true`、`has_hooks: false`。虽然 hook 与代码文件已下载到本机，运行时没有加载插件 hook，普通重启也不会启动监控。此前修正 ZIP 结构解决了归档问题，没有解决这条安装路径的 hook 能力问题。
+
+请使用下面的桌面 **本地 marketplace** 来源安装，实现受信任 hook 自动启动。不要把「创建插件」账户上传与桌面本地来源安装混为一谈。
 
 **使用桌面本地来源安装，无需 CLI**：
 
@@ -157,9 +159,11 @@ python3 plugins/context-lens/cli.py enable
 
 先确认上传的是独立的 `context-lens-plugin.zip`，而不是源码包 `codex-context-local.zip` 或 GitHub 自动生成的 Source code ZIP。单插件包的清单路径应为 `context-lens/plugin.json`，不能嵌套在 `plugins/context-lens/` 下面。
 
-如果使用新包仍失败，通用错误提示不足以确定原因，需要查看实际的导入错误。本插件依赖本机 lifecycle hook；包结构校验通过不能证明账户上传入口会加载本地 hook。可以使用上面的桌面本地来源安装流程。
+即使新包上传成功，当前账户来源也只加载了 skills，没有加载 hook。需要自动监控时，请使用上面的桌面本地来源安装流程。
 
 ### 已安装，但没有图标
+
+如果来自「创建插件」账户上传，首先检查插件来源：当前 `created-by-me-remote` 安装已实际确认没有 hook 能力。应换用本地 marketplace 安装，而不是重复上传、重启或调整 hover 样式。
 
 先把鼠标移到已完成的回复上，入口默认隐藏。如果仍未出现，检查 hook 是否受信任、是否触发了本地会话启动，以及应用是否开放了本地调试端口。
 
