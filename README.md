@@ -9,11 +9,11 @@
 <p align="center">
   <a href="https://github.com/Cloudkkk/codex-context-lens/actions/workflows/ci.yml"><img src="https://github.com/Cloudkkk/codex-context-lens/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT License"></a>
-  <img src="https://img.shields.io/badge/version-0.3.3-6366f1" alt="Version 0.3.3">
+  <img src="https://img.shields.io/badge/version-0.3.4-6366f1" alt="Version 0.3.4">
   <img src="https://img.shields.io/badge/platform-macOS-lightgrey" alt="macOS">
 </p>
 
-Context Lens 是一个用于 macOS Codex / ChatGPT 桌面端的第三方本地插件。它读取本机的 Codex 会话日志，在每条已完成回复的操作栏最右侧显示上下文用量，并通过悬停面板展示分类汇总。
+Context Lens 是一个用于 macOS Codex / ChatGPT 桌面端的第三方本地插件。它读取本机的 Codex 会话日志，在每条已完成回复的操作栏时间左侧显示上下文用量，并通过悬停面板展示分类汇总。
 
 入口采用 **16px SVG 图标和原生操作栏灰色**，默认隐藏，鼠标移到回复上才显示。查看用量无需发送聊天消息，也无需 API Key 或独立启动器。
 
@@ -27,7 +27,7 @@ Context Lens 是一个用于 macOS Codex / ChatGPT 桌面端的第三方本地�
 
 ## 功能
 
-- **消息旁直接查看**：回复操作栏右侧的饼图图标与百分比，hover 查看、点击固定、Esc 关闭。
+- **消息旁直接查看**：回复操作栏时间左侧的饼图图标与百分比，hover 查看、点击固定、Esc 关闭。
 - **历史轮次回放**：每个入口对应自己的会话和轮次，旧回复显示当时的用量。
 - **上下文分类**：用户消息、助手消息、工具调用与返回、Skills、基础指令、记忆指令、压缩摘要等。
 - **压缩感知**：使用日志中的替换历史重建上下文，避免把压缩前的数字套到新窗口。
@@ -40,11 +40,11 @@ Context Lens 是一个用于 macOS Codex / ChatGPT 桌面端的第三方本地�
 
 需要 macOS Codex / ChatGPT 桌面端；优先使用应用自带 Python，也兼容本机 Python 3.9+。
 
-1. 在 [最新 Release](https://github.com/Cloudkkk/codex-context-lens/releases/latest) 下载 **`Context-Lens-0.3.3-macOS.pkg`**，双击完成安装。
+1. 在 [最新 Release](https://github.com/Cloudkkk/codex-context-lens/releases/latest) 下载 **`Context-Lens-0.3.4-macOS.pkg`**，双击完成安装。
 2. 打开 Codex 的 Context Lens 插件详情，运行 **Setup** 技能。Setup 就是初始化；当前桌面界面可能通过「立即试用」进入设置聊天，并不一定显示单独的「初始化」按钮。
 3. 初始化会启动监控，需要调试端口时，在本次回复与其他可见本地任务结束后自动正常退出、带参数重开。**无需额外发送消息、先信任 Hook 或手动 ⌘Q。**
 
-重开后，将鼠标移到一条已完成回复，再悬停最右侧的饼图按钮。
+重开后，将鼠标移到一条已完成回复，再悬停时间左侧的饼图按钮。
 
 当前包尚未签名或公证；如果 macOS 阻止打开，需要在「系统设置 → 隐私与安全性」中允许。完整说明见 [INSTALL.md](INSTALL.md)。
 
@@ -58,7 +58,7 @@ ZIP 保留给手动登记或开发使用，见 [手动安装](docs/manual-instal
 
 | 操作 | 效果 |
 | --- | --- |
-| 鼠标移到回复上 | 显示最右侧的图标与百分比 |
+| 鼠标移到回复上 | 显示时间左侧的图标与百分比 |
 | 悬停图标 | 打开这一轮的上下文汇总 |
 | 点击图标 | 固定面板，再次点击可关闭 |
 | 按 Esc 或点击面板外 | 关闭面板 |
@@ -69,7 +69,7 @@ ZIP 保留给手动登记或开发使用，见 [手动安装](docs/manual-instal
 
 ## 更新
 
-下载新 `.pkg` 并安装，再在插件详情点击初始化。安装器会整体替换自己的来源目录，避免残留旧清单；不会修改其他插件来源或自动信任 Hook。
+下载新 `.pkg` 并安装，再在插件详情运行 Setup。安装器会整体替换自己的来源目录，避免残留旧清单；不会修改其他插件来源或自动信任 Hook。
 
 查看版本变化见 [CHANGELOG.md](CHANGELOG.md)。
 
@@ -91,7 +91,7 @@ ZIP 保留给手动登记或开发使用，见 [手动安装](docs/manual-instal
 
 ### 为什么还可能需要重新初始化
 
-调试参数属于本次应用进程。完全退出后从普通入口启动应用，参数可能丢失；此时再次运行 Setup即可自动重开。不保证首次设置后永久免重启，也不修改应用包或登录启动项。
+调试参数属于本次应用进程。完全退出后从普通入口启动应用，参数可能丢失；此时再次运行 Setup 即可自动重开。不保证首次设置后永久免重启，也不修改应用包或登录启动项。
 
 ### 已安装，但没有图标
 
@@ -99,7 +99,7 @@ ZIP 保留给手动登记或开发使用，见 [手动安装](docs/manual-instal
 
 | 状态 | 含义 |
 | --- | --- |
-| `initialization_required` | 需要点击初始化开放调试端口 |
+| `initialization_required` | 需要运行 Setup 开放调试端口 |
 | `waiting_for_tasks` | 等待初始化回复或其他可见本地任务结束 |
 | `quitting_app` / `reopening_app` | 正常退出或带参数重开中 |
 | `quit_cancelled` | 应用拒绝退出或未在 30 秒内退出，未强退 |

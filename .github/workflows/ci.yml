@@ -36,7 +36,7 @@ jobs:
       - name: Installer regression tests
         run: python -m unittest discover -s scripts/tests -v
       - name: JavaScript matching tests
-        run: node --test plugins/context-lens/tests/test_matching.cjs
+        run: node --test plugins/context-lens/tests/test*.cjs
       - name: Frontend syntax checks
         run: |
           node --check plugins/context-lens/web/matching.js

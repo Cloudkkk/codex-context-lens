@@ -1,0 +1,17 @@
+const assert = require('node:assert/strict');
+const { indexTurns, matchTurn } = require('../web/matching.js');
+const table = { turn_id: 'table-turn', completed: true, text_prefix: '当前会话可用的技能主要有这些：\n\n| 类别 | 技能与用途 |\n|---|---|\n| 开发 | 测试 |' };
+const greeting = { turn_id: 'greeting-turn', completed: true, text_prefix: '你好，这是另一条足够长的普通回复。' };
+const turns = [table, greeting], index = indexTurns(turns);
+assert.equal(matchTurn([], '当前会话可用的技能主要有这些：类别技能与用途开发测试', turns), null);
+assert.equal(matchTurn([], '完全不同的渲染文本', turns, 'table-turn', index), table);
+assert.equal(matchTurn(['greeting-turn'], greeting.text_prefix, turns, 'not-yet-logged', index), null);
+assert.equal(matchTurn([], greeting.text_prefix, turns), greeting);
+assert.equal(matchTurn([], greeting.text_prefix, [greeting, { ...greeting, turn_id: 'repeated-turn' }]), null);
+const dup = [table, { ...table }];
+assert.equal(matchTurn([], table.text_prefix, dup, 'table-turn', indexTurns(dup)), null);
+const otherSessionIndex = indexTurns([greeting]);
+assert.equal(matchTurn([], greeting.text_prefix, [greeting], 'table-turn', otherSessionIndex), null);
+const sameWording = { ...table, text_prefix: greeting.text_prefix };
+assert.equal(matchTurn([], '', [sameWording, greeting], 'table-turn'), sameWording);
+console.log('8 regression assertions passed: rendered table, authoritative ID, delayed log, legacy fallback, repeated text, duplicate ID, session isolation');

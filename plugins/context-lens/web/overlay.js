@@ -7,7 +7,7 @@
   const buttonStyle = document.createElement('style');
   buttonStyle.id = 'codex-context-lens-button-style';
   buttonStyle.textContent = `
-    button[${marker}]{display:inline-flex;align-items:center;justify-content:center;gap:4px;height:24px;padding:2px 4px;margin-inline-start:auto;border:0;border-radius:5px;background:transparent;color:var(--color-text-tertiary,light-dark(#8f8f8f,#afafaf));font-family:inherit;font-size:12px;font-weight:400;line-height:1;cursor:pointer;opacity:0;pointer-events:none;white-space:nowrap;flex-shrink:0;transition:background .12s,opacity .12s}
+    button[${marker}]{display:inline-flex;align-items:center;justify-content:center;gap:4px;height:24px;padding:2px 4px;margin-inline-start:2px;border:0;border-radius:5px;background:transparent;color:var(--color-text-tertiary,light-dark(#8f8f8f,#afafaf));font-family:inherit;font-size:12px;font-weight:400;line-height:1;cursor:pointer;opacity:0;pointer-events:none;white-space:nowrap;flex-shrink:0;transition:background .12s,opacity .12s}
     [${scopeMarker}]:hover button[${marker}],[${scopeMarker}]:focus-within button[${marker}],button[${marker}][aria-expanded="true"]{opacity:1;pointer-events:auto}
     button[${marker}]:hover,button[${marker}]:focus-visible{background:color-mix(in srgb,currentColor 8%,transparent);opacity:1}
     button[${marker}] svg{width:16px;height:16px;display:block;flex-shrink:0}
@@ -15,6 +15,7 @@
   `;
   document.head.append(buttonStyle);
   let state = { sessionId: null, turns: [] }, activeButton = null, pinned = false;
+  let turnIndex = new Map();
   let closeTimer = null, openTimer = null, scanTimer = null, sequence = 0;
   let diagnostics = { candidates: 0, matchedTurns: 0, actionRows: 0, reason: 'starting' };
   const awaiting = new Map(), cache = new Map();
@@ -105,25 +106,34 @@
   }
   function matchTurn(node) {
     const container = node.closest('[data-turn-key]') || node;
+    const turnId = node.closest('[data-content-search-turn-key]')?.getAttribute('data-content-search-turn-key');
     const keys = [container.getAttribute('data-turn-key'), node.getAttribute('data-content-search-assistant-turn-key'), node.id].filter(Boolean);
-    return window.__codexContextLensMatching.matchTurn(keys, node.textContent, state.turns);
+    return window.__codexContextLensMatching.matchTurn(keys, turnId ? '' : node.textContent, state.turns, turnId, turnIndex);
   }
   function scan() {
     scanTimer = null;
-    diagnostics = { candidates: 0, matchedTurns: 0, actionRows: 0, reason: 'scanning' };
+    diagnostics = { candidates: 0, matchedTurns: 0, actionRows: 0, hiddenCandidates: 0, idMatches: 0, textMatches: 0, unmatchedTurns: 0, reason: 'scanning' };
     const active = threadId();
     if (active && active !== state.sessionId) { diagnostics.reason = 'session_mismatch'; document.querySelectorAll(`[${marker}]`).forEach(n => n.remove()); return hide(); }
     const nodes = document.querySelectorAll('[data-local-conversation-final-assistant], [data-content-search-assistant-turn-key]');
     diagnostics.candidates = nodes.length;
     const keep = new Set(), rows = new Set();
     for (const node of nodes) {
+      // Cached workspaces stay in the DOM after switching chats.
+      if (!node.getClientRects().length || node.closest('[hidden], [aria-hidden="true"], [inert]') || getComputedStyle(node).visibility === 'hidden') {
+        diagnostics.hiddenCandidates++;
+        continue;
+      }
       const wrapper = node.closest('[data-turn-key]') || node;
       const stamp = wrapper.querySelector('[data-assistant-message-sent-time]');
       const row = stamp?.parentElement;
       if (row) diagnostics.actionRows++;
       if (!row || rows.has(row)) continue;
-      const turn = matchTurn(node); if (!turn || !turn.completed) continue;
+      const turn = matchTurn(node);
+      if (!turn || !turn.completed) { diagnostics.unmatchedTurns++; continue; }
       diagnostics.matchedTurns++;
+      if (node.closest('[data-content-search-turn-key]')?.getAttribute('data-content-search-turn-key')) diagnostics.idMatches++;
+      else diagnostics.textMatches++;
       rows.add(row);
       const scope = row.closest('.group') || wrapper;
       scope.setAttribute(scopeMarker, ''); scopes.add(scope);
@@ -145,13 +155,13 @@
         button.addEventListener('mouseleave', () => { clearTimeout(openTimer); delayedHide(); });
         button.addEventListener('focus', () => show(button)); button.addEventListener('blur', delayedHide);
         button.addEventListener('click', event => { event.stopPropagation(); if (activeButton === button && pinned) hide(); else { pinned = true; show(button); } });
-        row.append(button);
+        row.insertBefore(button, stamp);
       }
       button.dataset.turnId = turn.turn_id;
       const label = turn.capacity ? (turn.used / turn.capacity * 100).toFixed(0) + '%' : format(turn.used);
       const percentage = button.querySelector('[data-context-lens-percentage]');
       if (percentage.textContent !== label) percentage.textContent = label;
-      if (row.lastElementChild !== button) row.append(button);
+      if (button.nextElementSibling !== stamp) row.insertBefore(button, stamp);
       keep.add(button);
     }
     document.querySelectorAll(`[${marker}]`).forEach(button => { if (!keep.has(button)) { if (button === activeButton) hide(); button.remove(); } });
@@ -160,7 +170,7 @@
   }
   function schedule() { if (!scanTimer) scanTimer = setTimeout(scan, 80); }
   const observer = new MutationObserver(schedule);
-  observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['data-turn-key', 'data-app-action-sidebar-thread-active'] });
+  observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['data-turn-key', 'data-content-search-turn-key', 'data-app-action-sidebar-thread-active'] });
   host.addEventListener('mouseenter', () => clearTimeout(closeTimer)); host.addEventListener('mouseleave', delayedHide);
   host.addEventListener('pointerdown', () => { pinned = true; clearTimeout(closeTimer); });
   const onKey = event => { if (event.key === 'Escape') hide(); };
@@ -168,7 +178,7 @@
   document.addEventListener('keydown', onKey); document.addEventListener('pointerdown', onClick);
   window.addEventListener('resize', place); window.addEventListener('scroll', place, true);
   window[key] = {
-    update(payload) { if (state.sessionId !== payload.sessionId) { cache.clear(); hide(); } state = payload; schedule(); },
+    update(payload) { if (state.sessionId !== payload.sessionId) { cache.clear(); hide(); } state = payload; turnIndex = window.__codexContextLensMatching.indexTurns(state.turns); schedule(); },
     receive(payload) { const task = awaiting.get(payload.id); if (!task) return; clearTimeout(task.timer); awaiting.delete(payload.id); payload.error ? task.reject(new Error(payload.error)) : task.resolve(payload.report); },
     status() { return { activeThreadId: threadId(), buttons: document.querySelectorAll(`[${marker}]`).length, sessionId: state.sessionId, turns: state.turns.length, diagnostics }; },
     dispose() { observer.disconnect(); clearTimeout(scanTimer); clearTimeout(closeTimer); clearTimeout(openTimer); for (const task of awaiting.values()) { clearTimeout(task.timer); task.reject(new Error('插件已停止')); } awaiting.clear(); document.removeEventListener('keydown', onKey); document.removeEventListener('pointerdown', onClick); window.removeEventListener('resize', place); window.removeEventListener('scroll', place, true); document.querySelectorAll(`[${marker}]`).forEach(b => b.remove()); for (const scope of scopes) scope.removeAttribute(scopeMarker); scopes.clear(); buttonStyle.remove(); host.remove(); delete window[key]; }

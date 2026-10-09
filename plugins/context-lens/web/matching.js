@@ -15,7 +15,18 @@
       // DOM textContent does not insert Markdown paragraph/list whitespace.
       .replace(/\s+/g, '');
   }
-  function matchTurn(keys, text, turns) {
+  function indexTurns(turns) {
+    const index = new Map();
+    for (const turn of turns) {
+      if (!turn.turn_id) continue;
+      // Duplicate IDs cannot identify a unique usage record.
+      index.set(turn.turn_id, index.has(turn.turn_id) ? null : turn);
+    }
+    return index;
+  }
+  function matchTurn(keys, text, turns, turnId = null, index = null) {
+    // A real turn ID is authoritative, even while its log is still arriving.
+    if (turnId) return (index || indexTurns(turns)).get(turnId) || null;
     const exact = turns.filter(turn => keys.some(key => key === turn.turn_id || key.endsWith(turn.turn_id)
       || (turn.message_id && key.endsWith(turn.message_id))));
     if (exact.length === 1) return exact[0];
@@ -36,5 +47,5 @@
     if (ids.length > 1) return ids.includes(sidebar) ? sidebar : null;
     return sidebar || null;
   }
-  return { canonical, matchTurn, resolveSessionId };
+  return { canonical, indexTurns, matchTurn, resolveSessionId };
 });
