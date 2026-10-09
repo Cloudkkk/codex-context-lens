@@ -1,0 +1,20 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "context-lens",
+  "version": "0.2.10",
+  "description": "本地 Codex 上下文明细：在消息操作栏 hover 查看。",
+  "license": "MIT",
+  "extensions": {
+    "com.openai": {
+      "hooks": "./hooks/hooks.json",
+      "interface": {
+        "displayName": "上下文明细 · Context Lens",
+        "shortDescription": "消息下方操作栏悬停查看上下文分类用量",
+        "longDescription": "插件自动启动监控。缺少本地调试端口时，在应用退出后自动带参数重开，无需独立启动器。只读 sessions 日志；总量来自日志，分类估算。",
+        "developerName": "Local Workspace",
+        "category": "Productivity",
+        "capabilities": ["Read"]
+      }
+    }
+  }
+}

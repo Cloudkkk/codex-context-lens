@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Context Lens · 交互预览</title>
+<style>
+body{margin:0;background:#f9f9fa;color:#26282d;font-family:-apple-system,BlinkMacSystemFont,sans-serif}main{max-width:760px;margin:90px auto;padding:0 26px}h1{font-size:22px;letter-spacing:-.5px;font-weight:600;margin:0 0 10px}.intro{font-size:13px;color:#8b8f97;line-height:1.7}article{margin:55px 0;line-height:1.8;font-size:15px}.user{background:#eeeef1;border-radius:16px;padding:12px 18px;width:fit-content;margin-left:auto;margin-bottom:24px}.actions{display:flex;gap:12px;align-items:center;color:#9599a2;margin-top:20px;height:28px}.actions button{border:0;color:inherit;background:transparent;cursor:pointer;font-size:16px;padding:4px}.actions span{font-size:11px}.hint{font-size:12px;color:#858a93;margin-top:40px}
+</style></head>
+<body><main>
+<h1>上下文明细 · Context Lens</h1>
+<div class="intro">交互预览（模拟消息与用量）。实际插件把相同的面板挂在 Codex 消息操作栏。<br>鼠标移到回复上，最右侧会出现饼图图标；悬停查看明细，点击固定面板，Esc 关闭。</div>
+<div data-app-action-sidebar-thread-row data-app-action-sidebar-thread-active="true" data-app-action-sidebar-thread-id="demo-session" hidden></div>
+<article data-turn-key="turn-demo-one"><div class="user">这轮上下文都被什么占用了？</div><div data-local-conversation-final-assistant>本地日志会显示最近请求的输入总量，以及可见文本的分类估算。</div><div class="actions"><button aria-label="复制回复">▢</button><button aria-label="重新生成">↻</button><span data-assistant-message-sent-time>19:35</span></div></article>
+<article data-turn-key="turn-demo-two"><div class="user">希望可以直接 hover 查看。</div><div data-local-conversation-final-assistant>鼠标悬停在消息操作栏的用量入口，即可查看这一轮的上下文分类。</div><div class="actions"><button aria-label="复制回复">▢</button><button aria-label="重新生成">↻</button><span data-assistant-message-sent-time>19:48</span></div></article>
+<div class="hint">总量来自请求记录 · 分类显示 ≈ · 日志未覆盖的差额单独展示</div>
+</main><script src="plugins/context-lens/web/matching.js"></script><script src="plugins/context-lens/web/overlay.js"></script><script src="plugins/context-lens/web/demo.js"></script></body></html>

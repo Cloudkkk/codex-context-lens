@@ -1,0 +1,12 @@
+{
+  "name": "codex-context-local",
+  "interface": { "displayName": "本地上下文面板" },
+  "plugins": [
+    {
+      "name": "context-lens",
+      "source": { "source": "local", "path": "./plugins/context-lens" },
+      "policy": { "installation": "AVAILABLE", "authentication": "ON_INSTALL" },
+      "category": "Productivity"
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
+  <title id="title">Context Lens</title>
+  <desc id="desc">A segmented context ring on an indigo square.</desc>
+  <rect width="128" height="128" rx="28" fill="#eef2ff"/>
+  <path d="M56 29a36 36 0 1 0 43 43H56V29Z" fill="none" stroke="#4f46e5" stroke-width="7" stroke-linejoin="round"/>
+  <path d="M72 29v27h27a36 36 0 0 0-27-27Z" fill="#a5b4fc" stroke="#4f46e5" stroke-width="7" stroke-linejoin="round"/>
+</svg>
