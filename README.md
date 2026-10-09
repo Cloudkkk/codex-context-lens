@@ -50,52 +50,22 @@ Context Lens 是一个用于 macOS Codex / ChatGPT 桌面端的第三方本地�
 
 ### 从 Release 安装
 
-已安装 0.2.10 且看不到插件 hook 的用户，请换用 0.2.12。这个版本改用当前客户端可识别的 `.codex-plugin/plugin.json` 原生清单。更新本地来源后，在插件目录重新安装；随后刷新 Hooks，审核并信任 `SessionStart`。
+完整操作说明见 **[安装与使用手册 INSTALL.md](INSTALL.md)**；下载包内也包含同一份手册。
 
-下载 [codex-context-local.zip](https://github.com/Cloudkkk/codex-context-lens/releases/download/v0.2.12/codex-context-local.zip)，解压到一个长期保留的位置，例如 `~/Documents/CodexPlugins/`。包内包含插件、本地 marketplace 和 [INSTALL.md](INSTALL.md)。
+1. 到 [最新 Release](https://github.com/Cloudkkk/codex-context-lens/releases/latest) 下载 `codex-context-local.zip`，解压并移动到个人主目录，例如 `~/codex-context-local`。
+2. 在桌面本地聊天中让 Codex 登记该目录为本地 plugin marketplace，只登记来源。
+3. 重新打开桌面端，在插件目录选择来源 **本地上下文面板**，安装并启用 **上下文明细 · Context Lens**。
+4. 刷新 **设置 → Hooks**，审核并信任插件的 `SessionStart`。
+5. 新建本地聊天并发送消息。若监控状态为 `waiting_for_app_exit`，任务结束后 ⌘Q 完全退出一次，等待自动重开。
+6. 回复完成后，鼠标移到回复上，再 hover 最右侧的饼图按钮。
 
-**1. 登记本地来源（首次一次）**
-
-在 Codex 桌面聊天中提供解压目录的绝对路径，让 Codex 完成登记：
-
-```text
-请将以下目录注册为 Codex 本地 plugin marketplace：<解压后的 codex-context-local 目录绝对路径>。
-只登记来源，不安装插件、不修改其他来源、不自动信任 hook。
-```
-
-对应的登记命令如下；它只登记来源，插件仍在桌面端安装：
-
-```sh
-codex plugin marketplace add /absolute/path/to/codex-context-local
-```
-
-登记成功后，来源名称为 `codex-context-local`，展示名称为 **本地上下文面板**。目录必须含有 `.agents/plugins/marketplace.json`；仅下载、解压或上传 ZIP 都不等于登记来源。
-
-**2. 在桌面插件目录安装**
-
-重新打开桌面端，进入 **Plugins / 插件目录**，切换来源为 **本地上下文面板**，安装并启用 **上下文明细 · Context Lens**。本地版本的标识为 `context-lens@codex-context-local`。
-
-**3. 审核 hook**
-
-在 **设置 → Hooks / 钩子** 点击刷新。此时应出现 **来自插件 / From Plugins → Context Lens**，其中包含一个 `SessionStart` 命令：
-
-```sh
-python3 "${PLUGIN_ROOT}/cli.py" hook
-```
-
-审核后点击 **Trust / 信任**。如果没有「来自插件」，先确认上一步安装的是本地来源版本且已启用，不要反复重启。账户上传得到的 `created-by-me-remote` 版本在当前客户端没有 hook 能力。
-
-**4. 触发并查看**
-
-信任后新建或恢复一个本地聊天，触发 `SessionStart`。首次若应用未开放本地调试端口，等任务结束后按 **⌘Q 完全退出应用一次**，等待监控自动带参数重开；不要立即手动打开。之后开始本地聊天，等回复完成，鼠标移到回复上，再 hover 最右侧的饼图按钮。
-
-> 该包通过本地 marketplace 安装。桌面「创建插件」的 ZIP 账户上传不会加载本插件的本机 hook，不能用于自动面板安装。安装不会自动信任 hook；信任需要用户审核。
+使用 **0.2.12 或更新版本**。不要在「创建插件」里上传 ZIP；账户上传来源不加载本包的本机 hook。
 
 [官方 OpenAI 文档](https://developers.openai.com/plugins/build/plugins#bundled-mcp-servers-and-lifecycle-hooks)说明了本地来源、hook 信任与执行环境要求。
 
 ### 从 GitHub 登记来源（可选）
 
-不下载 ZIP 时，也可以登记 Git 来源，再按上述第 2–4 步在桌面端安装、信任并使用：
+不下载 ZIP 时，也可以登记 Git 来源，再按手册在桌面端安装、信任并使用：
 
 ```sh
 codex plugin marketplace add https://github.com/Cloudkkk/codex-context-lens.git
