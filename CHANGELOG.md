@@ -4,14 +4,12 @@
 
 首个整理用于 Git marketplace 分发的版本。
 
-### 分发包修正 — 2026-10-09
+### 分发整理 — 2026-10-09
 
-- 新增 `context-lens-plugin.zip` 独立插件包，清单位于 `context-lens/plugin.json`，保留本机 hook 与全部运行代码。
-- `codex-context-local.zip` 明确标记为完整源码 / marketplace 包，避免误用于单插件上传入口。
-- 增加可重复运行的打包脚本与 CI 包结构验证，排除 Git 元数据、缓存和真实会话日志。
-- 补充桌面本地来源安装步骤，区分包结构验证与尚待验证的桌面上传、hook 执行。
-- 实际账户上传安装确认：当前 `created-by-me-remote` 来源只加载 skills，不加载 hook；自动面板安装改用桌面本地 marketplace 来源。
-- 此次仅修正分发与文档，插件运行版本保持 `0.2.10`。
+- Release 仅保留 `codex-context-local.zip`，包含本地 marketplace、插件和安装说明。
+- 安装流程明确分为：登记来源、桌面安装、信任 hook、触发会话。
+- 当前账户 ZIP 上传来源不加载本机 hook，自动面板使用本地 marketplace 安装。
+- 打包与 CI 校验插件文件和 marketplace 路径；运行版本仍为 `0.2.10`。
 
 - 消息操作栏最右侧提供 16px SVG 图标与百分比，使用原生灰色和细线样式。
 - 入口默认隐藏，回复 hover、键盘聚焦或面板打开时显示。

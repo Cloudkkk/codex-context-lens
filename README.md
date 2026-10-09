@@ -48,66 +48,58 @@ Context Lens 是一个用于 macOS Codex / ChatGPT 桌面端的第三方本地�
 | 日志 | 本机已有 Codex 本地会话，默认目录为 `~/.codex/sessions` |
 | Node.js | 仅开发和运行 JavaScript 测试需要；使用插件不需要 |
 
-### 下载包与桌面端安装
+### 从 Release 安装
 
-到 [GitHub Release](https://github.com/Cloudkkk/codex-context-lens/releases/tag/v0.2.10) 下载所需附件：
+下载 [codex-context-local.zip](https://github.com/Cloudkkk/codex-context-lens/releases/download/v0.2.10/codex-context-local.zip)，解压到一个长期保留的位置，例如 `~/Documents/CodexPlugins/`。包内包含插件、本地 marketplace 和 [INSTALL.md](INSTALL.md)。
 
-| 附件 | 内容与用途 |
-| --- | --- |
-| [`context-lens-plugin.zip`](https://github.com/Cloudkkk/codex-context-lens/releases/download/v0.2.10/context-lens-plugin.zip) | 独立单插件归档，只有 `context-lens/`；用于检查、导出或手动配置本地来源，当前账户上传安装不会加载 hook |
-| [`codex-context-local.zip`](https://github.com/Cloudkkk/codex-context-lens/releases/download/v0.2.10/codex-context-local.zip) | 完整源码与本地 marketplace，用于桌面本地来源安装或开发；不要上传到「创建插件」单插件入口 |
+**1. 登记本地来源（首次一次）**
 
-**当前桌面账户上传安装无法自动启用面板。** 实际安装诊断已确认：从「创建插件」上传的包进入 `created-by-me-remote` 来源，客户端报告 `has_skills: true`、`has_hooks: false`。虽然 hook 与代码文件已下载到本机，运行时没有加载插件 hook，普通重启也不会启动监控。此前修正 ZIP 结构解决了归档问题，没有解决这条安装路径的 hook 能力问题。
+在 Codex 桌面聊天中提供解压目录的绝对路径，让 Codex 完成登记：
 
-请使用下面的桌面 **本地 marketplace** 来源安装，实现受信任 hook 自动启动。不要把「创建插件」账户上传与桌面本地来源安装混为一谈。
+```text
+请将以下目录注册为 Codex 本地 plugin marketplace：<解压后的 codex-context-local 目录绝对路径>。
+只登记来源，不安装插件、不修改其他来源、不自动信任 hook。
+```
 
-**使用桌面本地来源安装，无需 CLI**：
+对应的登记命令如下；它只登记来源，插件仍在桌面端安装：
 
-1. 解压 `codex-context-local.zip`，保留隐藏目录 `.agents/plugins/marketplace.json`。
-2. 在 Codex 桌面端把解压后的 `codex-context-local` 文件夹添加为项目，并打开该项目的本地聊天。
-3. 完全退出后重新打开桌面端，让客户端发现项目内的 marketplace。
-4. 打开 **Plugins / 插件目录**，将来源切换为 **本地上下文面板**，安装 **上下文明细 · Context Lens**。
-5. 按下一节审核并信任 hook，再开始或恢复本地聊天。
+```sh
+codex plugin marketplace add /absolute/path/to/codex-context-local
+```
 
-本地来源的展示取决于客户端版本。[官方 OpenAI 文档](https://developers.openai.com/plugins/build/plugins#install-a-local-plugin-manually)说明了项目 marketplace 的发现与桌面安装流程，也明确本机 hook 脚本必须存在于执行环境中；账户侧创建插件本身不代表脚本已部署到本机。
+登记成功后，来源名称为 `codex-context-local`，展示名称为 **本地上下文面板**。目录必须含有 `.agents/plugins/marketplace.json`；仅下载、解压或上传 ZIP 都不等于登记来源。
 
-### 从 GitHub 用命令行安装（可选）
+**2. 在桌面插件目录安装**
+
+重新打开桌面端，进入 **Plugins / 插件目录**，切换来源为 **本地上下文面板**，安装并启用 **上下文明细 · Context Lens**。本地版本的标识为 `context-lens@codex-context-local`。
+
+**3. 审核 hook**
+
+在 **设置 → Hooks / 钩子** 点击刷新。此时应出现 **来自插件 / From Plugins → Context Lens**，其中包含一个 `SessionStart` 命令：
+
+```sh
+python3 "${PLUGIN_ROOT}/cli.py" hook
+```
+
+审核后点击 **Trust / 信任**。如果没有「来自插件」，先确认上一步安装的是本地来源版本且已启用，不要反复重启。账户上传得到的 `created-by-me-remote` 版本在当前客户端没有 hook 能力。
+
+**4. 触发并查看**
+
+信任后新建或恢复一个本地聊天，触发 `SessionStart`。首次若应用未开放本地调试端口，等任务结束后按 **⌘Q 完全退出应用一次**，等待监控自动带参数重开；不要立即手动打开。之后开始本地聊天，等回复完成，鼠标移到回复上，再 hover 最右侧的饼图按钮。
+
+> 该包通过本地 marketplace 安装。桌面「创建插件」的 ZIP 账户上传不会加载本插件的本机 hook，不能用于自动面板安装。安装不会自动信任 hook；信任需要用户审核。
+
+[官方 OpenAI 文档](https://developers.openai.com/plugins/build/plugins#bundled-mcp-servers-and-lifecycle-hooks)说明了本地来源、hook 信任与执行环境要求。
+
+### 从 GitHub 登记来源（可选）
+
+不下载 ZIP 时，也可以登记 Git 来源，再按上述第 2–4 步在桌面端安装、信任并使用：
 
 ```sh
 codex plugin marketplace add https://github.com/Cloudkkk/codex-context-lens.git
-codex plugin add context-lens@codex-context-local
 ```
 
-`codex-context-local` 是此仓库的 marketplace 名称；`context-lens` 是插件名称。
-
-如果终端提示 `codex: command not found`，先安装或配置 Codex CLI。不要把上面的终端命令直接发送到聊天输入框。
-
-### 启用自动监控
-
-1. 打开桌面端的 **设置 → Hooks → From Plugins**。
-2. 找到 **Context Lens / context-lens**，审核其 `SessionStart` 命令：`python3 "${PLUGIN_ROOT}/cli.py" hook`。
-3. 点击 **Trust（信任）**。
-4. 新建或恢复一个本地聊天，触发会话启动 hook。
-5. 把鼠标移到一条已完成回复上，悬停操作栏最右侧的饼图图标。
-
-插件未出现在列表时，重新打开桌面端刷新插件来源，再检查 Hooks。终端 CLI 用户通过 `/hooks` 审核和信任 hook。
-
-> [!IMPORTANT]
-> 安装插件不等于信任 hook。第一次需要审核并信任；hook 定义变化后可能需要重新审核。
->
-> 如果桌面应用尚未开放本地调试端口，监控会等待应用退出。等任务完成后**完全退出桌面端一次**，插件会自动带参数重开。无需额外启动器，也不会强制退出正在运行的任务。
-
-### 从本地目录安装
-
-保留完整目录结构，包括隐藏的 `.agents` 文件夹：
-
-```sh
-git clone https://github.com/Cloudkkk/codex-context-lens.git
-codex plugin marketplace add ./codex-context-lens
-codex plugin add context-lens@codex-context-local
-```
-
-如果已添加同名的本地 marketplace，先停止面板、移除旧来源，再添加 Git 来源。切换来源不会修改你的会话日志。
+完全通过 CLI 安装时，登记之后再运行 `codex plugin add context-lens@codex-context-local`。终端找不到 `codex` 时，可让桌面聊天调用应用自带的 CLI；不要把终端命令直接当作聊天请求发送。
 
 ## 使用
 
@@ -155,11 +147,19 @@ python3 plugins/context-lens/cli.py enable
 
 ## 常见问题
 
-### 「创建插件」上传失败
+### 为什么 Hooks 没有 Context Lens
 
-先确认上传的是独立的 `context-lens-plugin.zip`，而不是源码包 `codex-context-local.zip` 或 GitHub 自动生成的 Source code ZIP。单插件包的清单路径应为 `context-lens/plugin.json`，不能嵌套在 `plugins/context-lens/` 下面。
+本地插件未安装或未启用时，不会出现其 hook。来源登记和插件安装是两步。
 
-即使新包上传成功，当前账户来源也只加载了 skills，没有加载 hook。需要自动监控时，请使用上面的桌面本地来源安装流程。
+如果通过「创建插件」上传 ZIP，当前客户端只加载了 skills，没有加载 hook；请按安装章节改用本地 marketplace 版本。
+
+需要核对时，可让 Codex 检查：
+
+```sh
+codex plugin list --marketplace codex-context-local --available --json
+```
+
+`installed: false` 表示只是可发现，尚未安装。已安装后仍不见 hook，请确认启用状态、重新打开桌面端并刷新 Hooks；同时检查安装目录内的 `hooks/hooks.json`。
 
 ### 已安装，但没有图标
 
@@ -224,7 +224,7 @@ node --test plugins/context-lens/tests/test_matching.cjs
 
 当前有 **25 项 Python 测试和 12 项 JavaScript 测试**。CI 在 Linux 与 macOS 上运行合成数据测试；真实桌面挂载仍需要手动验证。
 
-发布前从仓库根目录运行 `python3 scripts/package.py`，生成独立单插件包与源码包。脚本只收录 Git 已跟踪文件，并校验单插件根目录、manifest、hook 引用和运行文件；CI 同样检查打包。包结构验证不等于桌面上传与 hook 执行验证。
+发布前从仓库根目录运行 `python3 scripts/package.py`，生成唯一的 `codex-context-local.zip` 分发包。脚本只收录 Git 已跟踪文件，校验插件 manifest、hook 引用、运行文件与 marketplace 路径；CI 同样检查打包。
 
 贡献流程见 [CONTRIBUTING.md](CONTRIBUTING.md)，安全边界与问题反馈见 [SECURITY.md](SECURITY.md)。
 

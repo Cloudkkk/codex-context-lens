@@ -1,8 +1,9 @@
-"""Build separate marketplace-source and standalone-plugin ZIPs from tracked files."""
+"""Build one local marketplace distribution ZIP from tracked files."""
 import argparse
 import json
 import re
 import subprocess
+import tempfile
 import zipfile
 from pathlib import Path, PurePosixPath
 
@@ -82,14 +83,28 @@ def main():
         if "tests" in relative.parts or relative == PurePosixPath("web/demo.js"):
             continue
         plugin_files.append((ROOT / str(path), "context-lens/" + str(relative)))
-    plugin_zip = output / "context-lens-plugin.zip"
-    write_zip(plugin_zip, plugin_files)
-    version, count = validate_plugin(plugin_zip)
+    # The account-upload archive does not enable local hooks. Validate a
+    # temporary plugin bundle, but distribute only the local marketplace.
+    with tempfile.TemporaryDirectory() as temporary:
+        plugin_zip = Path(temporary) / "plugin.zip"
+        write_zip(plugin_zip, plugin_files)
+        version, count = validate_plugin(plugin_zip)
     source_zip = output / "codex-context-local.zip"
     write_zip(source_zip, [(ROOT / str(path), "codex-context-local/" + str(path)) for path in files])
-    print(f"Standalone plugin {version}: {plugin_zip} ({count} files, structure validated)")
-    print(f"Marketplace source: {source_zip} ({len(files)} files)")
-    print("Archive validation does not verify desktop upload or local hook execution.")
+    with zipfile.ZipFile(source_zip) as bundle:
+        prefix = "codex-context-local/"
+        catalog = json.loads(bundle.read(prefix + ".agents/plugins/marketplace.json"))
+        entry = next(item for item in catalog["plugins"] if item["name"] == "context-lens")
+        path = entry["source"]["path"]
+        if not path.startswith("./") or ".." in PurePosixPath(path).parts:
+            raise ValueError("Marketplace plugin path must stay inside the distribution")
+        if prefix + path[2:] + "/plugin.json" not in bundle.namelist():
+            raise ValueError("Marketplace points at a missing plugin")
+        bundle.read(prefix + "INSTALL.md")
+        if bundle.testzip() is not None:
+            raise ValueError("Distribution CRC check failed")
+    print(f"Local marketplace {version}: {source_zip} ({len(files)} files)")
+    print(f"Validated {count} plugin runtime files and the marketplace reference")
 
 
 if __name__ == "__main__":
