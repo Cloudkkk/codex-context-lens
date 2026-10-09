@@ -191,10 +191,14 @@ def initialize(root, port, request_path, ensure, connected, session=None):
     except (OSError, ValueError, ConnectionError):
         ready = False
     app, pids = desktop()
+    if app is None:
+        raise ValueError("未找到支持的桌面安装位置：/Applications/ChatGPT.app 或 /Applications/Codex.app。")
+    if pids is None:
+        raise RuntimeError("执行权限不足，无法检查桌面进程。请由 Setup 使用沙箱外执行权限重新运行初始化；尚未安排重启。")
     if ready:
         return {"status": "ready", "monitor": ensure(root, port), "restart": False}
-    if app is None or not pids:
-        raise ValueError("请在正在运行的 Codex 桌面端点击初始化。")
+    if not pids:
+        raise ValueError("未检测到正在运行的 Codex / ChatGPT 主进程；请在桌面端运行 Setup。")
     # Validate the initiating turn before starting a monitor. No latest-session
     # guessing: completion must correspond to the user's explicit setup action.
     state = ensure(root, port)

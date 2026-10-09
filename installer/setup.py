@@ -220,7 +220,7 @@ def install(payload, destination, binary, call=cli_json, verify=verify_hook, dis
     finally:
         shutil.rmtree(stage, ignore_errors=True)
     return {"installed": True, "version": version, "source": str(destination),
-            "nextStep": "打开 Codex 插件详情，点击初始化 / Run setup。无需先信任 hook 或手动退出。"}
+            "nextStep": "打开 Codex 插件详情，运行 Setup 初始化，并按宿主提示授权本地执行权限。无需先信任 hook 或手动退出。"}
 
 
 def main():

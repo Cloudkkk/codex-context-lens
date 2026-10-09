@@ -141,6 +141,31 @@ class InitializationTests(unittest.TestCase):
         self.event('turn_aborted', turn=None)
         self.assertEqual(task_state(self.log), set())
 
+    def test_sandbox_process_denial_is_not_reported_as_desktop_not_running(self):
+        ensure = Mock()
+        with patch('context_lens.initialize.sys.platform', 'darwin'), \
+                patch('context_lens.initialize.desktop', return_value=(self.app, None)), \
+                self.assertRaisesRegex(RuntimeError, '执行权限不足'):
+            initialize(self.root, 9333, self.request, ensure, lambda port: [])
+        ensure.assert_not_called()
+        self.assertFalse(self.request.exists())
+
+    def test_no_running_process_has_distinct_error(self):
+        ensure = Mock()
+        with patch('context_lens.initialize.sys.platform', 'darwin'), \
+                patch('context_lens.initialize.desktop', return_value=(self.app, [])), \
+                self.assertRaisesRegex(ValueError, '未检测到正在运行'):
+            initialize(self.root, 9333, self.request, ensure, lambda port: [])
+        ensure.assert_not_called()
+
+    def test_missing_desktop_installation_has_distinct_error(self):
+        ensure = Mock()
+        with patch('context_lens.initialize.sys.platform', 'darwin'), \
+                patch('context_lens.initialize.desktop', return_value=(None, None)), \
+                self.assertRaisesRegex(ValueError, '安装位置'):
+            initialize(self.root, 9333, self.request, ensure, lambda port: [])
+        ensure.assert_not_called()
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -9,7 +9,7 @@
 <p align="center">
   <a href="https://github.com/Cloudkkk/codex-context-lens/actions/workflows/ci.yml"><img src="https://github.com/Cloudkkk/codex-context-lens/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT License"></a>
-  <img src="https://img.shields.io/badge/version-0.3.2-6366f1" alt="Version 0.3.2">
+  <img src="https://img.shields.io/badge/version-0.3.3-6366f1" alt="Version 0.3.3">
   <img src="https://img.shields.io/badge/platform-macOS-lightgrey" alt="macOS">
 </p>
 
@@ -40,8 +40,8 @@ Context Lens 是一个用于 macOS Codex / ChatGPT 桌面端的第三方本地�
 
 需要 macOS Codex / ChatGPT 桌面端；优先使用应用自带 Python，也兼容本机 Python 3.9+。
 
-1. 在 [最新 Release](https://github.com/Cloudkkk/codex-context-lens/releases/latest) 下载 **`Context-Lens-0.3.2-macOS.pkg`**，双击完成安装。
-2. 打开 Codex 的 Context Lens 插件详情，点击 **初始化 / Run setup**。界面文字由宿主决定。
+1. 在 [最新 Release](https://github.com/Cloudkkk/codex-context-lens/releases/latest) 下载 **`Context-Lens-0.3.3-macOS.pkg`**，双击完成安装。
+2. 打开 Codex 的 Context Lens 插件详情，运行 **Setup** 技能。Setup 就是初始化；当前桌面界面可能通过「立即试用」进入设置聊天，并不一定显示单独的「初始化」按钮。
 3. 初始化会启动监控，需要调试端口时，在本次回复与其他可见本地任务结束后自动正常退出、带参数重开。**无需额外发送消息、先信任 Hook 或手动 ⌘Q。**
 
 重开后，将鼠标移到一条已完成回复，再悬停最右侧的饼图按钮。
@@ -91,7 +91,7 @@ ZIP 保留给手动登记或开发使用，见 [手动安装](docs/manual-instal
 
 ### 为什么还可能需要重新初始化
 
-调试参数属于本次应用进程。完全退出后从普通入口启动应用，参数可能丢失；此时再次点击初始化即可自动重开。不保证首次设置后永久免重启，也不修改应用包或登录启动项。
+调试参数属于本次应用进程。完全退出后从普通入口启动应用，参数可能丢失；此时再次运行 Setup即可自动重开。不保证首次设置后永久免重启，也不修改应用包或登录启动项。
 
 ### 已安装，但没有图标
 
