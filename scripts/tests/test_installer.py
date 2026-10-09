@@ -24,7 +24,7 @@ class FakeCLI:
             return {"marketplaces": ([self.previous] if self.previous else [])}
         if arguments[:2] == ["plugin", "list"]:
             if self.add_count:
-                return {"installed": [{"pluginId": setup.PLUGIN_ID, "enabled": True, "version": "0.3.1"}]}
+                return {"installed": [{"pluginId": setup.PLUGIN_ID, "enabled": True, "version": "0.3.2"}]}
             return {"installed": ([self.old_plugin] if self.old_plugin else [])}
         if arguments[:2] == ["plugin", "add"]:
             self.add_count += 1
@@ -54,7 +54,7 @@ class InstallerTests(unittest.TestCase):
         verified = []
         result = setup.install(self.payload, self.destination, "codex", call=cli,
                                verify=lambda binary, catalog: verified.append(catalog))
-        self.assertEqual(result["version"], "0.3.1")
+        self.assertEqual(result["version"], "0.3.2")
         self.assertTrue((self.destination / "plugins/context-lens/.codex-plugin/plugin.json").is_file())
         self.assertEqual(verified, [self.destination / ".agents/plugins/marketplace.json"])
         self.assertIn(["plugin", "marketplace", "add", str(self.destination), "--json"], cli.calls)
@@ -133,6 +133,62 @@ class InstallerTests(unittest.TestCase):
         (self.payload / "outside").symlink_to(self.root)
         with self.assertRaisesRegex(ValueError, "符号链接"):
             setup.validate_payload(self.payload)
+
+    def stale_cli(self):
+        original = FakeCLI(self.previous)
+        def call(binary, arguments):
+            if arguments[:3] == ['plugin', 'marketplace', 'list']:
+                if not (self.destination / '.agents/plugins/marketplace.json').is_file():
+                    raise RuntimeError('Error: failed to load marketplace(s):\n- `codex-context-local`: marketplace root does not contain a supported manifest')
+            if arguments[:3] == ['plugin', 'marketplace', 'add']:
+                if not (self.destination / '.agents/plugins/marketplace.json').is_file():
+                    raise RuntimeError('Source files must be restored before registration')
+            return original(binary, arguments)
+        self.previous.update({'unavailable': True, 'config': {'source_type': 'local', 'source': str(self.destination)}})
+        return original, call
+
+    def test_deleted_registered_directory_can_be_reinstalled(self):
+        cli, call = self.stale_cli()
+        recovered = []
+        def recover(binary):
+            recovered.append(binary)
+            return self.previous, None
+        result = setup.install(self.payload, self.destination, 'codex', call=call,
+                               recover=recover, verify=lambda *args: None)
+        self.assertTrue(result['installed'])
+        self.assertEqual(recovered, ['codex'])
+        self.assertTrue((self.destination / '.agents/plugins/marketplace.json').is_file())
+        self.assertEqual(sum(args[:2] == ['plugin', 'list'] for args in cli.calls), 1)
+
+    def test_failed_stale_repair_restores_exact_original_registration(self):
+        cli, call = self.stale_cli()
+        restored = []
+        def fail(*args):
+            raise RuntimeError('Verification failed')
+        with self.assertRaisesRegex(RuntimeError, 'Verification failed'):
+            setup.install(self.payload, self.destination, 'codex', call=call,
+                          recover=lambda binary: (self.previous, None), verify=fail,
+                          restore=lambda binary, previous: restored.append(previous['config']))
+        self.assertFalse(self.destination.exists())
+        self.assertEqual(restored, [self.previous['config']])
+
+    def test_unrelated_marketplace_error_is_not_treated_as_our_stale_source(self):
+        def fail(*args):
+            raise RuntimeError('Error: failed to load marketplace(s):\n- `another-source`: missing manifest')
+        def must_not_recover(*args):
+            raise AssertionError('Unrelated sources must not be modified')
+        with self.assertRaisesRegex(RuntimeError, 'another-source'):
+            setup.install(self.payload, self.destination, 'codex', call=fail, recover=must_not_recover)
+        self.assertFalse(self.destination.exists())
+
+    def test_missing_source_recovery_reads_only_own_config(self):
+        config = {'marketplaces': {setup.MARKETPLACE: {'source_type': 'local', 'source': str(self.destination)},
+                                   'other': {'source_type': 'local', 'source': '/other'}},
+                  'plugins': {setup.PLUGIN_ID: {'enabled': False}}}
+        with patch.object(setup, 'appserver_request', return_value={'config': config}):
+            previous, old = setup.recover_unavailable_source('codex')
+        self.assertEqual(previous['config'], config['marketplaces'][setup.MARKETPLACE])
+        self.assertFalse(old['enabled'])
 
 
 if __name__ == "__main__":

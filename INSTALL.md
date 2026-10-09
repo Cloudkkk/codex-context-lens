@@ -1,10 +1,10 @@
 # Context Lens 安装与使用
 
-适用于 0.3.1 及以上。推荐 macOS 安装包：自动登记来源、安装插件，无需独立启动器。
+适用于 0.3.2 及以上。推荐 macOS 安装包：自动登记来源、安装插件，无需独立启动器。
 
 ## 1. 下载并安装
 
-在 [GitHub 最新 Release](https://github.com/Cloudkkk/codex-context-lens/releases/latest) 的 Assets 下载 **Context-Lens-0.3.1-macOS.pkg**，双击并按 macOS 安装器完成安装。不要选择 Source code。
+在 [GitHub 最新 Release](https://github.com/Cloudkkk/codex-context-lens/releases/latest) 的 Assets 下载 **Context-Lens-0.3.2-macOS.pkg**，双击并按 macOS 安装器完成安装。不要选择 Source code。
 
 需要已安装的 Codex / ChatGPT 桌面端。优先使用应用自带 Python，也支持本机 Python 3.9+。
 
@@ -23,7 +23,7 @@
 
 **不需要先信任 Hook，不需要手动退出，不需要在退出后手动重新打开。**
 
-如果插件详情暂未刷新，重新进入插件目录确认版本为 0.3.1 或更新；当前版本已经通过插件元数据接口验证识别 setup 入口，具体按钮展示仍取决于桌面版本。
+如果插件详情暂未刷新，重新进入插件目录确认版本为 0.3.2 或更新；当前版本已经通过插件元数据接口验证识别 setup 入口，具体按钮展示仍取决于桌面版本。
 
 ## 3. 查看面板
 
@@ -40,6 +40,10 @@
 监控持续维护面板。可选地在「设置 → Hooks」审核并信任 Context Lens 的 SessionStart，支持监控退出后在新建或恢复本地聊天时补启动。Hook 只启动监控，不重启应用。
 
 调试参数只对当前应用进程有效。从普通入口重新启动时可能丢失参数，此时再次点击初始化即可；不会设置登录启动项或修改应用包。
+
+## 安装失败
+
+0.3.2 可自动恢复「已登记但目录被删除」的旧 Context Lens 来源，无需手动编辑配置。若遇到其他错误，提供安装器错误截图；维护时可从 `/var/log/install.log` 定位失败原因。
 
 ## 初始化没有完成
 

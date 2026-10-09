@@ -93,6 +93,33 @@ def restore_disabled(binary):
         "filePath": None, "expectedVersion": None, "reloadUserConfig": True})
 
 
+def recover_unavailable_source(binary):
+    """Read a stale registration without requiring its deleted catalog.
+
+    config/read does not load marketplaces. Never repair another source or
+    blindly treat every marketplace/list failure as an empty installation.
+    """
+    config = appserver_request(binary, "config/read", {"includeLayers": False}).get("config", {})
+    source = config.get("marketplaces", {}).get(MARKETPLACE)
+    if not isinstance(source, dict) or not source.get("source"):
+        raise RuntimeError("无法确认损坏来源的原始登记，未修改配置。")
+    previous = {"name": MARKETPLACE, "root": source["source"],
+                "marketplaceSource": {"source": source["source"], "ref": source.get("ref")},
+                "config": source, "unavailable": True}
+    settings = config.get("plugins", {}).get(PLUGIN_ID)
+    old_plugin = ({"pluginId": PLUGIN_ID, "enabled": settings.get("enabled", True)}
+                  if isinstance(settings, dict) else None)
+    return previous, old_plugin
+
+
+def restore_unavailable_source(binary, previous):
+    # Restoring an originally broken registration with marketplace/add would
+    # validate its missing directory and fail. Restore exactly this key instead.
+    appserver_request(binary, "config/batchWrite", {
+        "edits": [{"keyPath": "marketplaces." + MARKETPLACE, "value": previous["config"], "mergeStrategy": "replace"}],
+        "filePath": None, "expectedVersion": None, "reloadUserConfig": True})
+
+
 def validate_payload(payload):
     manifest_path = payload / "plugins/context-lens/.codex-plugin/plugin.json"
     manifest = json.loads(manifest_path.read_text())
@@ -116,14 +143,21 @@ def validate_payload(payload):
     return manifest["version"]
 
 
-def install(payload, destination, binary, call=cli_json, verify=verify_hook, disable=restore_disabled):
+def install(payload, destination, binary, call=cli_json, verify=verify_hook, disable=restore_disabled,
+            recover=recover_unavailable_source, restore=restore_unavailable_source):
     if os.geteuid() == 0:
         raise RuntimeError("用户安装步骤不能以 root 执行。")
     version = validate_payload(payload)
-    before = call(binary, ["plugin", "marketplace", "list", "--json"])
-    previous = next((item for item in before.get("marketplaces", []) if item["name"] == MARKETPLACE), None)
-    installed_before = call(binary, ["plugin", "list", "--marketplace", MARKETPLACE, "--json"])
-    old_plugin = next((item for item in installed_before.get("installed", []) if item.get("pluginId") == PLUGIN_ID), None)
+    try:
+        before = call(binary, ["plugin", "marketplace", "list", "--json"])
+    except RuntimeError as error:
+        if "failed to load marketplace" not in str(error) or "`" + MARKETPLACE + "`" not in str(error):
+            raise
+        previous, old_plugin = recover(binary)
+    else:
+        previous = next((item for item in before.get("marketplaces", []) if item["name"] == MARKETPLACE), None)
+        installed_before = call(binary, ["plugin", "list", "--marketplace", MARKETPLACE, "--json"])
+        old_plugin = next((item for item in installed_before.get("installed", []) if item.get("pluginId") == PLUGIN_ID), None)
     destination.parent.mkdir(parents=True, exist_ok=True)
     stage = Path(tempfile.mkdtemp(prefix=".context-lens-", dir=destination.parent))
     prepared, backup = stage / "new", stage / "previous"
@@ -158,7 +192,9 @@ def install(payload, destination, binary, call=cli_json, verify=verify_hook, dis
         operations = []
         if not old_plugin:
             operations.append(lambda: call(binary, ["plugin", "remove", PLUGIN_ID, "--json"]))
-        if previous:
+        if previous and previous.get("unavailable"):
+            operations.append(lambda: restore(binary, previous))
+        elif previous:
             operations.append(lambda: call(binary, ["plugin", "marketplace", "remove", MARKETPLACE, "--json"]))
             source = previous.get("marketplaceSource", {}).get("source") or previous["root"]
             arguments = ["plugin", "marketplace", "add", source, "--json"]
@@ -169,7 +205,8 @@ def install(payload, destination, binary, call=cli_json, verify=verify_hook, dis
         else:
             operations.append(lambda: call(binary, ["plugin", "marketplace", "remove", MARKETPLACE, "--json"]))
         if old_plugin:
-            operations.append(lambda: call(binary, ["plugin", "add", PLUGIN_ID, "--json"]))
+            if not (previous and previous.get("unavailable")):
+                operations.append(lambda: call(binary, ["plugin", "add", PLUGIN_ID, "--json"]))
             if not old_plugin.get("enabled", True):
                 operations.append(lambda: disable(binary))
         for operation in operations:
