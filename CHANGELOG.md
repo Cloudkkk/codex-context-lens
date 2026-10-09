@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.11 — 2026-10-09
+
+- 修复本地插件已安装、已启用，却没有出现在 Hooks 页的问题。
+- 使用 `.codex-plugin/plugin.json` 原生兼容清单，显式声明 skills 和 hook 路径。
+- 在当前客户端通过 `plugin/read` 与 `hooks/list` 验证发现；不自动信任 hook。
+
+
 ## 0.2.10 — 2026-10-09
 
 首个整理用于 Git marketplace 分发的版本。

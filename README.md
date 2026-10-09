@@ -9,7 +9,7 @@
 <p align="center">
   <a href="https://github.com/Cloudkkk/codex-context-lens/actions/workflows/ci.yml"><img src="https://github.com/Cloudkkk/codex-context-lens/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT License"></a>
-  <img src="https://img.shields.io/badge/version-0.2.10-6366f1" alt="Version 0.2.10">
+  <img src="https://img.shields.io/badge/version-0.2.11-6366f1" alt="Version 0.2.11">
   <img src="https://img.shields.io/badge/platform-macOS-lightgrey" alt="macOS">
 </p>
 
@@ -50,7 +50,9 @@ Context Lens 是一个用于 macOS Codex / ChatGPT 桌面端的第三方本地�
 
 ### 从 Release 安装
 
-下载 [codex-context-local.zip](https://github.com/Cloudkkk/codex-context-lens/releases/download/v0.2.10/codex-context-local.zip)，解压到一个长期保留的位置，例如 `~/Documents/CodexPlugins/`。包内包含插件、本地 marketplace 和 [INSTALL.md](INSTALL.md)。
+已安装 0.2.10 且看不到插件 hook 的用户，请换用 0.2.11。这个版本改用当前客户端可识别的 `.codex-plugin/plugin.json` 原生清单。更新本地来源后，在插件目录重新安装；随后刷新 Hooks，审核并信任 `SessionStart`。
+
+下载 [codex-context-local.zip](https://github.com/Cloudkkk/codex-context-lens/releases/download/v0.2.11/codex-context-local.zip)，解压到一个长期保留的位置，例如 `~/Documents/CodexPlugins/`。包内包含插件、本地 marketplace 和 [INSTALL.md](INSTALL.md)。
 
 **1. 登记本地来源（首次一次）**
 

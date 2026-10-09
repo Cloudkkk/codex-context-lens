@@ -43,6 +43,6 @@ python3 plugins/context-lens/cli.py stop
 
 描述实际问题、变化后的行为，以及运行过的验证。避免加入真实会话内容、账户信息或个人机器路径。
 
-发布插件行为更新时，同步修改 `plugins/context-lens/plugin.json` 与 `context_lens/__init__.py` 的版本，并更新 `CHANGELOG.md`。监控用版本号识别升级，不能只改源码而复用旧版本号。
+发布插件行为更新时，同步修改 `plugins/context-lens/.codex-plugin/plugin.json` 与 `context_lens/__init__.py` 的版本，并更新 `CHANGELOG.md`。监控用版本号识别升级，不能只改源码而复用旧版本号。
 
 安全问题请按 [SECURITY.md](SECURITY.md) 的方式反馈。

@@ -25,12 +25,12 @@ def validate_plugin(archive):
         if len(roots) != 1:
             raise ValueError("Expected exactly one plugin directory")
         root = roots.pop()
-        manifest = json.loads(bundle.read(root + "/plugin.json"))
+        manifest = json.loads(bundle.read(root + "/.codex-plugin/plugin.json"))
         if root != manifest["name"] or not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", root):
             raise ValueError("Directory must match the plugin name")
         if len(root) > 64:
             raise ValueError("Plugin directory name is too long")
-        extension = manifest["extensions"]["com.openai"]
+        extension = manifest
         if len(extension["interface"]["shortDescription"]) > 30:
             raise ValueError("Listing subtitle exceeds 30 characters")
         hook_path = extension["hooks"]
@@ -98,7 +98,7 @@ def main():
         path = entry["source"]["path"]
         if not path.startswith("./") or ".." in PurePosixPath(path).parts:
             raise ValueError("Marketplace plugin path must stay inside the distribution")
-        if prefix + path[2:] + "/plugin.json" not in bundle.namelist():
+        if prefix + path[2:] + "/.codex-plugin/plugin.json" not in bundle.namelist():
             raise ValueError("Marketplace points at a missing plugin")
         bundle.read(prefix + "INSTALL.md")
         if bundle.testzip() is not None:
