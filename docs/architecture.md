@@ -3,7 +3,7 @@
 ## 数据与界面路径
 
 ```text
-SessionStart hook
+Setup 初始化 / 可选 SessionStart hook
        │
        ▼
 Python supervisor ── reads ── ~/.codex/sessions/**/*.jsonl
@@ -26,7 +26,8 @@ Message action button → hover panel
 | --- | --- |
 | `reader.py` | 扫描 rollout，重建历史，读取用量与生成分类估算 |
 | `cdp.py` | 标准库 WebSocket/CDP 传输，仅接受 loopback 地址 |
-| `lifecycle.py` | 识别主应用，等待缺少调试端口的实例退出，执行一次重开 |
+| `lifecycle.py` | 识别主应用、检查插件开关、带调试参数打开应用 |
+| `initialize.py` | 明确初始化请求、等待轮次完成、正常退出与一次重开 |
 | `overlay.py` | 管理监控进程、连接窗口、处理悬停时的数据请求 |
 | `matching.js` | Markdown 与渲染文本规范化、唯一轮次匹配、会话 ID 解析 |
 | `overlay.js` | 入口、Shadow DOM 面板、交互与虚拟列表重新挂载 |
@@ -63,7 +64,7 @@ Message action button → hover panel
 
 监控状态与日志位于系统临时目录 `codex-context-lens-<uid>`。启动锁与进程校验防止重复 hook 创建多个监控；新版本会先停止旧版监控再接入窗口。
 
-缺少端口且发现主应用正在运行时，监控进入等待状态。应用退出后，确认没有其他实例出现，再调用系统 `open` 带 loopback 调试参数重开一次。无法确认进程状态时不重开；失败不循环。
+只有用户执行 initialize 才创建重启请求；Hook 只启动监控。初始化通过 CODEX_THREAD_ID 确认当前聊天和活跃轮次，不猜测 latest。等待当前轮次以及最近 24 小时日志中可见的本地活跃轮次完成，连续空闲至少 3 秒后，通过 NSRunningApplication.terminate 请求正常退出，再用 open 带 loopback 调试参数重开。聊天同一时刻只有一个活跃轮次，后续轮次覆盖中断的历史轮次。日志不完整、进程身份变化、等待 15 分钟或退出 30 秒超时时取消，不强退、不重试循环。
 
 成功连接后正常退出应用不会触发重开。插件关闭或监控停止会取消待执行的重开。纯 CLI 场景没有运行的桌面实例时，不自动打开 GUI。
 

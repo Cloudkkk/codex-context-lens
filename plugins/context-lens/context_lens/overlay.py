@@ -15,13 +15,15 @@ from pathlib import Path
 from .cdp import CDP
 from .reader import SessionStore
 from . import __version__
-from .lifecycle import AutoEnable, desktop, plugin_enabled
+from .lifecycle import desktop, plugin_enabled, reopen, running_pids
+from .initialize import RestartPlan, initialize
 
 PLUGIN_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_ROOT = Path.home() / ".codex" / "sessions"
 RUNTIME = Path(tempfile.gettempdir()) / ("codex-context-lens-" + str(os.getuid() if hasattr(os, "getuid") else "local"))
 STATE_PATH = RUNTIME / "overlay.json"
 STOP_PATH = RUNTIME / "stop"
+INITIALIZE_PATH = RUNTIME / "initialize.json"
 STOPPED = False
 
 
@@ -55,7 +57,7 @@ def watch(root, port):
     store, clients = SessionStore(root), {}
     script = (PLUGIN_ROOT / "web" / "matching.js").read_text() + "\n" + (PLUGIN_ROOT / "web" / "overlay.js").read_text()
     last_status, refresh_at, discover_at = None, 0, 0
-    bootstrap, runtime_status = AutoEnable(port), "starting"
+    bootstrap, runtime_status = RestartPlan(root, INITIALIZE_PATH, reopen), "starting"
     window_states = {}
     try:
         while not STOPPED and not STOP_PATH.exists():
@@ -84,9 +86,11 @@ def watch(root, port):
                             if "c" in locals():
                                 c.close()
                 app, pids = desktop() if not discovered else (None, None)
+                if not discovered and bootstrap.app is not None:
+                    app, pids = bootstrap.app, running_pids(bootstrap.app)
                 if STOPPED or STOP_PATH.exists() or not plugin_enabled():
                     break
-                runtime_status = bootstrap.tick(bool(discovered), app, pids, now)
+                runtime_status = bootstrap.tick(bool(discovered), app, pids, time.time())
                 if discovered and not clients:
                     runtime_status = "waiting_for_renderer"
                 discover_at = now + 5
@@ -144,6 +148,7 @@ def watch(root, port):
                 last_status = status
             time.sleep(.15 if clients else 1)
     finally:
+        INITIALIZE_PATH.unlink(missing_ok=True)
         for client in clients.values():
             try:
                 client.evaluate("window.__codexContextLens?.dispose()")
@@ -205,6 +210,9 @@ def main():
     subs = parser.add_subparsers(dest="command", required=True)
     for name in ("watch", "start", "enable", "hook"):
         subs.add_parser(name).add_argument("--port", type=int, default=9333)
+    setup = subs.add_parser("initialize")
+    setup.add_argument("--port", type=int, default=9333)
+    setup.add_argument("--session", help="Initializing chat UUID; defaults to CODEX_THREAD_ID")
     for name in ("stop", "status"):
         subs.add_parser(name)
     inspect = subs.add_parser("inspect")
@@ -220,6 +228,7 @@ def main():
             pass  # Optional UI must not fail a user task or add context content.
         return
     if args.command == "stop":
+        INITIALIZE_PATH.unlink(missing_ok=True)
         if active_process():
             STOP_PATH.touch()
         result = {"stopping": True}
@@ -227,6 +236,8 @@ def main():
         result = active_process() or {"running": False}
     elif args.command == "inspect":
         result = SessionStore(args.sessions_root).report(args.session, args.turn)
+    elif args.command == "initialize":
+        result = initialize(args.sessions_root, args.port, INITIALIZE_PATH, ensure, targets, args.session)
     else:
         result = ensure(args.sessions_root, args.port)
     print(json.dumps(result, ensure_ascii=False, indent=2))

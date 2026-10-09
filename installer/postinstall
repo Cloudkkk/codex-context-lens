@@ -1,0 +1,23 @@
+#!/bin/sh
+set -eu
+# macOS Installer runs this as root. Only public package files are staged here;
+# every user-directory write and Codex command runs as the logged-in user.
+if [ "${3:-/}" != "/" ]; then
+    printf '%s\n' 'Context Lens: install on the running macOS system volume.' >&2
+    exit 1
+fi
+task_script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+task_user=$(/usr/bin/stat -f '%Su' /dev/console)
+case "$task_user" in root|loginwindow|_mbsetupuser|'')
+    printf '%s\n' 'Context Lens: install while signed in to a macOS desktop account.' >&2
+    exit 1
+esac
+task_uid=$(/usr/bin/id -u "$task_user")
+task_stage=$(/usr/bin/mktemp -d /private/tmp/context-lens-install.XXXXXX)
+trap '/bin/rm -rf "$task_stage"' EXIT HUP INT TERM
+/usr/bin/ditto "$task_script_dir/payload" "$task_stage/marketplace"
+/bin/cp "$task_script_dir/setup.py" "$task_stage/setup.py"
+/bin/cp "$task_script_dir/install-user.sh" "$task_stage/install-user.sh"
+/bin/chmod -R a+rX "$task_stage"
+/bin/launchctl asuser "$task_uid" /usr/bin/sudo -H -u "$task_user" \
+    /bin/sh "$task_stage/install-user.sh" "$task_stage"

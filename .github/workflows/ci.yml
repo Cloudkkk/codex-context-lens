@@ -33,6 +33,8 @@ jobs:
           PYTHONDONTWRITEBYTECODE: '1'
           PYTHONPATH: plugins/context-lens
         run: python -m unittest discover -s plugins/context-lens/tests -v
+      - name: Installer regression tests
+        run: python -m unittest discover -s scripts/tests -v
       - name: JavaScript matching tests
         run: node --test plugins/context-lens/tests/test_matching.cjs
       - name: Frontend syntax checks
@@ -42,3 +44,6 @@ jobs:
           node --check plugins/context-lens/web/demo.js
       - name: Build and validate distribution archives
         run: python scripts/package.py --output-directory "$RUNNER_TEMP/context-lens-packages"
+      - name: Build macOS GUI installer
+        if: runner.os == 'macOS'
+        run: python scripts/build_macos_package.py --output-directory "$RUNNER_TEMP/context-lens-packages"

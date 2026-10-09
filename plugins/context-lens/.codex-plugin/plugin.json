@@ -1,6 +1,6 @@
 {
   "name": "context-lens",
-  "version": "0.2.12",
+  "version": "0.3.1",
   "description": "本地 Codex 上下文明细：在消息操作栏 hover 查看。",
   "license": "MIT",
   "skills": "./skills/",
@@ -8,11 +8,16 @@
   "interface": {
     "displayName": "上下文明细 · Context Lens",
     "shortDescription": "消息下方操作栏悬停查看上下文分类用量",
-    "longDescription": "插件自动启动监控。缺少本地调试端口时，在应用退出后自动带参数重开，无需独立启动器。只读 sessions 日志；总量来自日志，分类估算。",
+    "longDescription": "安装后点击初始化，启动面板并在回复结束后自动重启。无需手动发消息或退出应用。SessionStart hook 仅用于可选的后续自动恢复。只读本机会话日志。",
     "developerName": "Local Workspace",
     "category": "Productivity",
     "capabilities": [
       "Read"
     ]
+  },
+  "extensions": {
+    "com.openai": {
+      "onboardingSkill": "./skills/setup/SKILL.md"
+    }
   }
 }

@@ -39,10 +39,14 @@ def validate_plugin(archive):
         hooks = json.loads(bundle.read(root + "/" + hook_path[2:]))
         if not hooks["hooks"].get("SessionStart"):
             raise ValueError("SessionStart hook missing")
+        if manifest.get("extensions", {}).get("com.openai", {}).get("onboardingSkill") != "./skills/setup/SKILL.md":
+            raise ValueError("Onboarding skill missing")
         for required in ("cli.py", "LICENSE", "context_lens/__init__.py",
                          "context_lens/overlay.py", "context_lens/cdp.py",
                          "context_lens/reader.py", "context_lens/lifecycle.py",
-                         "skills/context-lens/SKILL.md", "web/matching.js", "web/overlay.js"):
+                         "skills/context-lens/SKILL.md", "web/matching.js", "web/overlay.js",
+                         "scripts/run-python.sh", "scripts/python-path.sh",
+                         "skills/setup/SKILL.md", "context_lens/initialize.py"):
             if root + "/" + required not in names:
                 raise ValueError("Missing runtime file: " + required)
         forbidden = {".git", "__pycache__", "tests", ".env"}
@@ -83,8 +87,8 @@ def main():
         if "tests" in relative.parts or relative == PurePosixPath("web/demo.js"):
             continue
         plugin_files.append((ROOT / str(path), "context-lens/" + str(relative)))
-    # The account-upload archive does not enable local hooks. Validate a
-    # temporary plugin bundle, but distribute only the local marketplace.
+    # Validate the plugin separately; the distributed ZIP is a marketplace
+    # source tree, not an archive for the account upload dialog.
     with tempfile.TemporaryDirectory() as temporary:
         plugin_zip = Path(temporary) / "plugin.zip"
         write_zip(plugin_zip, plugin_files)

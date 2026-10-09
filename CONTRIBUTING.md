@@ -10,6 +10,7 @@
 git clone https://github.com/Cloudkkk/codex-context-lens.git
 cd codex-context-lens
 PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=plugins/context-lens python3 -m unittest discover -s plugins/context-lens/tests -v
+python3 -m unittest discover -s scripts/tests -v
 node --test plugins/context-lens/tests/test_matching.cjs
 node --check plugins/context-lens/web/overlay.js
 ```
@@ -22,7 +23,7 @@ python3 plugins/context-lens/cli.py status
 python3 plugins/context-lens/cli.py stop
 ```
 
-真实窗口需要本地调试端口。监控不能直接为已经运行的应用补上启动参数，会在缺少端口的应用正常退出后尝试重开。
+真实窗口需要本地调试端口。监控不能为已运行应用补上启动参数。点击 setup 初始化入口会等待本次任务与其他可见任务完成，然后通过 NSRunningApplication 正常退出、重开；不要在仍有任务的桌面上手工执行初始化测试。
 
 ## 实现边界
 

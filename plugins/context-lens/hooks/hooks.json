@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"${PLUGIN_ROOT}/cli.py\" hook",
+            "command": "/bin/sh \"${PLUGIN_ROOT}/scripts/run-python.sh\" hook",
             "timeout": 10
           }
         ]

@@ -9,7 +9,7 @@
 <p align="center">
   <a href="https://github.com/Cloudkkk/codex-context-lens/actions/workflows/ci.yml"><img src="https://github.com/Cloudkkk/codex-context-lens/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT License"></a>
-  <img src="https://img.shields.io/badge/version-0.2.12-6366f1" alt="Version 0.2.12">
+  <img src="https://img.shields.io/badge/version-0.3.1-6366f1" alt="Version 0.3.1">
   <img src="https://img.shields.io/badge/platform-macOS-lightgrey" alt="macOS">
 </p>
 
@@ -31,47 +31,26 @@ Context Lens 是一个用于 macOS Codex / ChatGPT 桌面端的第三方本地�
 - **历史轮次回放**：每个入口对应自己的会话和轮次，旧回复显示当时的用量。
 - **上下文分类**：用户消息、助手消息、工具调用与返回、Skills、基础指令、记忆指令、压缩摘要等。
 - **压缩感知**：使用日志中的替换历史重建上下文，避免把压缩前的数字套到新窗口。
-- **自动监控**：通过受信任的 `SessionStart` hook 启动，并在窗口刷新后重新挂载。
+- **一键初始化**：通过插件设置入口启动监控，需要时自动正常退出、重开；Hook 仅用于可选的后续恢复。
 - **本地运行**：Python 标准库实现，只读 `~/.codex/sessions`，不需要额外服务或第三方 Python 依赖。
 
 分类目前只展示汇总。详细条目的展开入口暂时关闭，待内容归因更清楚后再加入。
 
 ## 安装
 
-### 环境要求
+需要 macOS Codex / ChatGPT 桌面端；优先使用应用自带 Python，也兼容本机 Python 3.9+。
 
-| 项目 | 要求 |
-| --- | --- |
-| 桌面端 | macOS 上的 Codex 或集成 Codex 的 ChatGPT 桌面端 |
-| Python | Python 3.9+，可通过 `python3` 调用 |
-| Codex CLI | 仅命令行注册来源或安装时需要；桌面本地目录安装不要求 CLI |
-| 日志 | 本机已有 Codex 本地会话，默认目录为 `~/.codex/sessions` |
-| Node.js | 仅开发和运行 JavaScript 测试需要；使用插件不需要 |
+1. 在 [最新 Release](https://github.com/Cloudkkk/codex-context-lens/releases/latest) 下载 **`Context-Lens-0.3.1-macOS.pkg`**，双击完成安装。
+2. 打开 Codex 的 Context Lens 插件详情，点击 **初始化 / Run setup**。界面文字由宿主决定。
+3. 初始化会启动监控，需要调试端口时，在本次回复与其他可见本地任务结束后自动正常退出、带参数重开。**无需额外发送消息、先信任 Hook 或手动 ⌘Q。**
 
-### 从 Release 安装
+重开后，将鼠标移到一条已完成回复，再悬停最右侧的饼图按钮。
 
-完整操作说明见 **[安装与使用手册 INSTALL.md](INSTALL.md)**；下载包内也包含同一份手册。
+当前包尚未签名或公证；如果 macOS 阻止打开，需要在「系统设置 → 隐私与安全性」中允许。完整说明见 [INSTALL.md](INSTALL.md)。
 
-1. 到 [最新 Release](https://github.com/Cloudkkk/codex-context-lens/releases/latest) 下载 `codex-context-local.zip`，解压并移动到个人主目录，例如 `~/codex-context-local`。
-2. 在桌面本地聊天中让 Codex 登记该目录为本地 plugin marketplace，只登记来源。
-3. 重新打开桌面端，在插件目录选择来源 **本地上下文面板**，安装并启用 **上下文明细 · Context Lens**。
-4. 刷新 **设置 → Hooks**，审核并信任插件的 `SessionStart`。
-5. 新建本地聊天并发送消息。若监控状态为 `waiting_for_app_exit`，任务结束后 ⌘Q 完全退出一次，等待自动重开。
-6. 回复完成后，鼠标移到回复上，再 hover 最右侧的饼图按钮。
+安装器自动完成当前用户的文件放置、来源登记、插件安装与启用，不设置登录启动项。初始化入口使用官方 `onboardingSkill`，会由 Codex 执行一次设置会话，可能需要宿主的执行权限审批；不是自行添加的原生脚本按钮。[官方说明](https://developers.openai.com/plugins/build/plugins#add-an-onboarding-skill)
 
-使用 **0.2.12 或更新版本**。不要在「创建插件」里上传 ZIP；账户上传来源不加载本包的本机 hook。
-
-[官方 OpenAI 文档](https://developers.openai.com/plugins/build/plugins#bundled-mcp-servers-and-lifecycle-hooks)说明了本地来源、hook 信任与执行环境要求。
-
-### 从 GitHub 登记来源（可选）
-
-不下载 ZIP 时，也可以登记 Git 来源，再按手册在桌面端安装、信任并使用：
-
-```sh
-codex plugin marketplace add https://github.com/Cloudkkk/codex-context-lens.git
-```
-
-完全通过 CLI 安装时，登记之后再运行 `codex plugin add context-lens@codex-context-local`。终端找不到 `codex` 时，可让桌面聊天调用应用自带的 CLI；不要把终端命令直接当作聊天请求发送。
+ZIP 保留给手动登记或开发使用，见 [手动安装](docs/manual-install.md)。Release ZIP 是 marketplace 来源目录，不用于「创建插件 → 上传 ZIP」。账户上传新版单插件包的接入尚未验证。
 
 ## 使用
 
@@ -90,20 +69,7 @@ codex plugin marketplace add https://github.com/Cloudkkk/codex-context-lens.git
 
 ## 更新
 
-先刷新 Git marketplace，再安装更新版本：
-
-```sh
-codex plugin marketplace upgrade codex-context-local
-codex plugin add context-lens@codex-context-local
-```
-
-之后新建或恢复聊天，让 hook 启动新版监控。更新 hook 后，如设置中显示需要审核，请重新信任。
-
-有源码 checkout 时，也可以从仓库根目录立即重载面板：
-
-```sh
-python3 plugins/context-lens/cli.py enable
-```
+下载新 `.pkg` 并安装，再在插件详情点击初始化。安装器会整体替换自己的来源目录，避免残留旧清单；不会修改其他插件来源或自动信任 Hook。
 
 查看版本变化见 [CHANGELOG.md](CHANGELOG.md)。
 
@@ -119,59 +85,31 @@ python3 plugins/context-lens/cli.py enable
 
 ## 常见问题
 
-### 为什么 Hooks 没有 Context Lens
+### Hook 是否必须信任
 
-本地插件未安装或未启用时，不会出现其 hook。来源登记和插件安装是两步。
+首次初始化不依赖 Hook。`SessionStart` 只在后续新建或恢复本地聊天时补启动监控；想启用这种恢复能力，可在「设置 → Hooks」审核并信任。Hook 不会关闭或重启应用。
 
-如果通过「创建插件」上传 ZIP，当前客户端只加载了 skills，没有加载 hook；请按安装章节改用本地 marketplace 版本。
+### 为什么还可能需要重新初始化
 
-需要核对时，可让 Codex 检查：
-
-```sh
-codex plugin list --marketplace codex-context-local --available --json
-```
-
-`installed: false` 表示只是可发现，尚未安装。已安装后仍不见 hook，请确认启用状态、重新打开桌面端并刷新 Hooks；同时检查安装目录内的 `hooks/hooks.json`。
+调试参数属于本次应用进程。完全退出后从普通入口启动应用，参数可能丢失；此时再次点击初始化即可自动重开。不保证首次设置后永久免重启，也不修改应用包或登录启动项。
 
 ### 已安装，但没有图标
 
-如果来自「创建插件」账户上传，首先检查插件来源：当前 `created-by-me-remote` 安装已实际确认没有 hook 能力。应换用本地 marketplace 安装，而不是重复上传、重启或调整 hover 样式。
+入口默认隐藏。先完成初始化，然后将鼠标移到已完成、有用量记录的本地回复上。检查状态时可以使用插件维护技能；`attached` 只代表连接成功，不能代替实际 hover 验证。
 
-先把鼠标移到已完成的回复上，入口默认隐藏。如果仍未出现，检查 hook 是否受信任、是否触发了本地会话启动，以及应用是否开放了本地调试端口。
-
-有源码 checkout 时可查看诊断：
-
-```sh
-python3 plugins/context-lens/cli.py status
-```
-
-`attached` 只说明连接到了窗口。`windows` 中的 `buttons > 0` 才说明入口已挂载。
-
-| 状态或原因 | 含义 |
+| 状态 | 含义 |
 | --- | --- |
-| `waiting_for_app_exit` | 等待首次正常退出，随后自动带调试参数重开 |
-| `reopening_app` | 正在等待重开的应用开放端口 |
-| `restart_failed` | 自动重开后端口仍不可用，或启动失败 |
-| `waiting_for_renderer` | 调试端口可用，但尚未连接到主窗口 |
-| `no_logged_turns` | 当前会话还没有可用的本地轮次记录，临时新建会话也可能出现此状态 |
-| `no_turn_match` | 界面内容或标识不能唯一对应到日志轮次 |
-| `no_action_rows` | 当前版本的消息操作栏结构不兼容 |
+| `initialization_required` | 需要点击初始化开放调试端口 |
+| `waiting_for_tasks` | 等待初始化回复或其他可见本地任务结束 |
+| `quitting_app` / `reopening_app` | 正常退出或带参数重开中 |
+| `quit_cancelled` | 应用拒绝退出或未在 30 秒内退出，未强退 |
+| `initialization_timed_out` | 等待任务超过 15 分钟，已取消本次重启 |
+| `initialization_cancelled` / `restart_failed` | 初始化状态不明确或重开失败，请检查状态后重试 |
+| `attached` | 监控已连接；按钮仍需能匹配日志轮次 |
 
-切换聊天后会话标识尚未同步时，先切到另一条聊天，再返回原聊天。普通入口更新无需重启整个桌面端。
+### 数据口径与平台限制
 
-### 为什么总量准确，分类却带有「≈」
-
-请求用量事件记录了真实输入总量，但日志不一定保存完整服务器端 prompt。分类只能对可见文本估算，不能把差额伪装成精确的 MCP 或系统工具占用。
-
-### 退出应用后会不会一直被重开
-
-不会。只有监控已发现一个缺少调试端口的运行实例时，才在其退出后尝试重开一次。已成功连接的应用正常退出后会保持退出；启动失败也不会进入循环。
-
-### 是否支持 Windows、Linux 或官方公共插件目录
-
-当前桌面自动接入仅支持 macOS。Windows / Linux 尚未提供桌面 bootstrap。
-
-此版本使用 lifecycle hooks，按当前[官方规则](https://developers.openai.com/plugins/build/plugins#bundled-mcp-servers-and-lifecycle-hooks)不适用于官方公共插件目录。可通过 Git marketplace 或 ZIP 分发。
+请求总量来自日志，分类为可见文本估算。macOS 以外的桌面接入尚未支持。包含 Hook 的包当前不适用于官方公共插件目录，可通过 GitHub 分发。[官方规则](https://developers.openai.com/plugins/build/plugins#bundled-mcp-servers-and-lifecycle-hooks)
 
 ## 卸载
 
@@ -194,9 +132,9 @@ PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=plugins/context-lens python3 -m unittest di
 node --test plugins/context-lens/tests/test_matching.cjs
 ```
 
-当前有 **26 项 Python 测试和 12 项 JavaScript 测试**。CI 在 Linux 与 macOS 上运行合成数据测试；真实桌面挂载仍需要手动验证。
+Python 测试覆盖日志读取、初始化重启状态、监控与安装回滚，JavaScript 测试覆盖消息匹配。CI 在 Linux 与 macOS 上运行合成数据测试；真实桌面挂载仍需要手动验证。
 
-发布前从仓库根目录运行 `python3 scripts/package.py`，生成唯一的 `codex-context-local.zip` 分发包。脚本只收录 Git 已跟踪文件，校验插件 manifest、hook 引用、运行文件与 marketplace 路径；CI 同样检查打包。
+发布前运行 `python3 scripts/package.py` 生成手动 ZIP，macOS 上运行 `python3 scripts/build_macos_package.py` 生成 GUI 安装包。脚本只收录 Git 已跟踪文件，校验插件 manifest、hook 引用、运行文件与 marketplace 路径；CI 同样检查打包。
 
 贡献流程见 [CONTRIBUTING.md](CONTRIBUTING.md)，安全边界与问题反馈见 [SECURITY.md](SECURITY.md)。
 
