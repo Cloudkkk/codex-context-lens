@@ -47,5 +47,11 @@
     if (ids.length > 1) return ids.includes(sidebar) ? sidebar : null;
     return sidebar || null;
   }
-  return { canonical, indexTurns, matchTurn, resolveSessionId };
+  function viewToken(viewId, turnIds) {
+    return JSON.stringify([viewId || null, [...new Set(turnIds || [])].filter(Boolean).sort()]);
+  }
+  function acceptsView(payload, view) {
+    return payload.viewToken === view.viewToken;
+  }
+  return { canonical, indexTurns, matchTurn, resolveSessionId, viewToken, acceptsView };
 });

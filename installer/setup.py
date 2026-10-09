@@ -135,7 +135,7 @@ def validate_payload(payload):
         raise ValueError("安装包缺少原生 hook 声明。")
     if manifest.get("extensions", {}).get("com.openai", {}).get("onboardingSkill") != "./skills/setup/SKILL.md":
         raise ValueError("安装包缺少初始化入口。")
-    for relative in ("hooks/hooks.json", "cli.py", "scripts/run-python.sh", "scripts/python-path.sh", "skills/setup/SKILL.md", "context_lens/initialize.py"):
+    for relative in ("hooks/hooks.json", "cli.py", "scripts/run-python.sh", "scripts/python-path.sh", "skills/setup/SKILL.md", "context_lens/initialize.py", "context_lens/routing.py"):
         if not (payload / "plugins/context-lens" / relative).is_file():
             raise ValueError("安装包缺少文件：" + relative)
     if any(path.is_symlink() for path in payload.rglob("*")):

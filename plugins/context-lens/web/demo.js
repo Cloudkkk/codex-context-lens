@@ -14,5 +14,5 @@
   }
   const first=report(.45),second=report(1);
   window.__contextLensRequest = raw => {const request=JSON.parse(raw);setTimeout(()=>window.__codexContextLens.receive({id:request.id,report:request.turn_id==='demo-one'?first:second}),80);};
-  window.__codexContextLens.update({sessionId:'demo-session',turns:[{turn_id:'demo-one',completed:true,used:first.context.used,capacity:475000},{turn_id:'demo-two',completed:true,used:second.context.used,capacity:475000}]});
+  window.__codexContextLens.update({viewToken:window.__codexContextLens.status().viewToken,sessionId:'demo-session',turns:[{turn_id:'demo-one',completed:true,used:first.context.used,capacity:475000},{turn_id:'demo-two',completed:true,used:second.context.used,capacity:475000}]});
 })();

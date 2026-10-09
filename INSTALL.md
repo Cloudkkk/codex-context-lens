@@ -1,10 +1,10 @@
 # Context Lens 安装与使用
 
-适用于 0.3.4 及以上。推荐 macOS 安装包：自动登记来源、安装插件，无需独立启动器。
+适用于 0.3.5 及以上。推荐 macOS 安装包：自动登记来源、安装插件，无需独立启动器。
 
 ## 1. 下载并安装
 
-在 [GitHub 最新 Release](https://github.com/Cloudkkk/codex-context-lens/releases/latest) 的 Assets 下载 **Context-Lens-0.3.4-macOS.pkg**，双击并按 macOS 安装器完成安装。不要选择 Source code。
+在 [GitHub 最新 Release](https://github.com/Cloudkkk/codex-context-lens/releases/latest) 的 Assets 下载 **Context-Lens-0.3.5-macOS.pkg**，双击并按 macOS 安装器完成安装。不要选择 Source code。
 
 需要已安装的 Codex / ChatGPT 桌面端。优先使用应用自带 Python，也支持本机 Python 3.9+。
 
@@ -25,7 +25,7 @@
 
 **不需要先信任 Hook，不需要手动退出，不需要在退出后手动重新打开。**
 
-如果插件详情暂未刷新，重新进入插件目录确认版本为 0.3.4 或更新；当前版本已经通过插件元数据接口验证识别 setup 入口，具体入口名称由桌面版本决定，不能保证有单独的 Run setup 按钮。
+如果插件详情暂未刷新，重新进入插件目录确认版本为 0.3.5 或更新；当前版本已经通过插件元数据接口验证识别 setup 入口，具体入口名称由桌面版本决定，不能保证有单独的 Run setup 按钮。
 
 ## 3. 查看面板
 
@@ -38,6 +38,8 @@
 | Esc 或点击面板外 | 关闭面板 |
 
 ## 后续使用
+
+同一次桌面运行只需初始化一次：共享监控会自动接入多个窗口，并独立解析各窗口当前聊天。切换聊天、新建本地聊天或打开同一聊天的另一窗口，不需要每个会话重新 Setup。临时会话 ID 通过可见真实轮次唯一映射到日志；日志暂未到达时会等待，不能唯一确定时不会串用其他聊天数据。
 
 监控持续维护面板。可选地在「设置 → Hooks」审核并信任 Context Lens 的 SessionStart，支持监控退出后在新建或恢复本地聊天时补启动。Hook 只启动监控，不重启应用。
 

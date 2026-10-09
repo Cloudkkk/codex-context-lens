@@ -14,8 +14,8 @@
     button[${marker}] [data-context-lens-percentage]{font-variant-numeric:tabular-nums}
   `;
   document.head.append(buttonStyle);
-  let state = { sessionId: null, turns: [] }, activeButton = null, pinned = false;
-  let turnIndex = new Map();
+  let state = { sessionId: null, viewToken: null, turns: [] }, activeButton = null, pinned = false;
+  let turnIndex = new Map(), requestedViewToken = null;
   let closeTimer = null, openTimer = null, scanTimer = null, sequence = 0;
   let diagnostics = { candidates: 0, matchedTurns: 0, actionRows: 0, reason: 'starting' };
   const awaiting = new Map(), cache = new Map();
@@ -44,6 +44,21 @@
       .filter(node => node.getClientRects().length && !node.closest('[hidden], [aria-hidden="true"]'))
       .map(node => node.getAttribute('data-conversation-id'));
     return window.__codexContextLensMatching.resolveSessionId(composerIds, row?.getAttribute('data-app-action-sidebar-thread-id'));
+  }
+  const selector = '[data-local-conversation-final-assistant], [data-content-search-assistant-turn-key]';
+  function visible(node) {
+    return !!node.getClientRects().length && !node.closest('[hidden], [aria-hidden="true"], [inert]') && getComputedStyle(node).visibility !== 'hidden';
+  }
+  function describeView() {
+    const activeThreadId = threadId();
+    const visibleTurnIds = [...new Set(Array.from(document.querySelectorAll(selector)).filter(visible)
+      .map(node => node.closest('[data-content-search-turn-key]')?.getAttribute('data-content-search-turn-key')).filter(Boolean))].sort();
+    return { activeThreadId, visibleTurnIds, viewToken: window.__codexContextLensMatching.viewToken(activeThreadId, visibleTurnIds) };
+  }
+  function requestView(view) {
+    if (requestedViewToken === view.viewToken || typeof window.__contextLensRequest !== 'function') return;
+    requestedViewToken = view.viewToken;
+    window.__contextLensRequest(JSON.stringify({ kind: 'view_changed' }));
   }
   function place() {
     if (!activeButton?.isConnected) return hide();
@@ -88,10 +103,12 @@
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => { awaiting.delete(id); reject(new Error('本地插件暂未连接')); }, 6000);
       awaiting.set(id, { resolve, reject, timer });
-      window.__contextLensRequest(JSON.stringify({ id, session_id: state.sessionId, turn_id: turnId }));
+      window.__contextLensRequest(JSON.stringify({ id, session_id: state.sessionId, turn_id: turnId, view_token: state.viewToken }));
     });
   }
   async function show(button) {
+    if (!state.sessionId || !window.__codexContextLensMatching.acceptsView(state, describeView())) return hide();
+    const startedView = state.viewToken;
     clearTimeout(closeTimer);
     if (activeButton && activeButton !== button) activeButton.setAttribute('aria-expanded', 'false');
     activeButton = button;
@@ -100,6 +117,7 @@
     const identity = `${state.sessionId}:${button.dataset.turnId}`;
     try {
       const hit = cache.get(identity), report = hit && Date.now() - hit.time < 3000 ? hit.report : await ask(button.dataset.turnId);
+      if (state.viewToken !== startedView || !window.__codexContextLensMatching.acceptsView(state, describeView())) return;
       cache.set(identity, { report, time: Date.now() });
       if (activeButton === button) { render(report); place(); }
     } catch (error) { if (activeButton === button) panel.replaceChildren(el('div', 'title', '暂无明细'), el('div', 'note', error.message)); }
@@ -113,14 +131,23 @@
   function scan() {
     scanTimer = null;
     diagnostics = { candidates: 0, matchedTurns: 0, actionRows: 0, hiddenCandidates: 0, idMatches: 0, textMatches: 0, unmatchedTurns: 0, reason: 'scanning' };
-    const active = threadId();
-    if (active && active !== state.sessionId) { diagnostics.reason = 'session_mismatch'; document.querySelectorAll(`[${marker}]`).forEach(n => n.remove()); return hide(); }
-    const nodes = document.querySelectorAll('[data-local-conversation-final-assistant], [data-content-search-assistant-turn-key]');
+    const view = describeView();
+    if (!window.__codexContextLensMatching.acceptsView(state, view)) {
+      diagnostics.reason = 'waiting_for_view';
+      document.querySelectorAll(`[${marker}]`).forEach(n => n.remove());
+      requestView(view); return hide();
+    }
+    if (!state.sessionId) {
+      diagnostics.reason = state.resolutionReason || 'waiting_for_session_log';
+      document.querySelectorAll(`[${marker}]`).forEach(n => n.remove());
+      return hide();
+    }
+    const nodes = document.querySelectorAll(selector);
     diagnostics.candidates = nodes.length;
     const keep = new Set(), rows = new Set();
     for (const node of nodes) {
       // Cached workspaces stay in the DOM after switching chats.
-      if (!node.getClientRects().length || node.closest('[hidden], [aria-hidden="true"], [inert]') || getComputedStyle(node).visibility === 'hidden') {
+      if (!visible(node)) {
         diagnostics.hiddenCandidates++;
         continue;
       }
@@ -158,6 +185,7 @@
         row.insertBefore(button, stamp);
       }
       button.dataset.turnId = turn.turn_id;
+      button.dataset.sessionId = state.sessionId;
       const label = turn.capacity ? (turn.used / turn.capacity * 100).toFixed(0) + '%' : format(turn.used);
       const percentage = button.querySelector('[data-context-lens-percentage]');
       if (percentage.textContent !== label) percentage.textContent = label;
@@ -169,8 +197,10 @@
     diagnostics.reason = keep.size ? 'mounted' : !state.turns.length ? 'no_logged_turns' : !nodes.length ? 'no_message_nodes' : !diagnostics.actionRows ? 'no_action_rows' : 'no_turn_match';
   }
   function schedule() { if (!scanTimer) scanTimer = setTimeout(scan, 80); }
-  const observer = new MutationObserver(schedule);
-  observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['data-turn-key', 'data-content-search-turn-key', 'data-app-action-sidebar-thread-active'] });
+  const observer = new MutationObserver(records => {
+    if (records.some(record => !record.target.closest?.('[data-context-lens-button], #codex-context-lens-popover, #codex-context-lens-button-style'))) schedule();
+  });
+  observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['data-turn-key', 'data-content-search-turn-key', 'data-conversation-id', 'data-app-action-sidebar-thread-active', 'data-app-action-sidebar-thread-id', 'hidden', 'aria-hidden', 'inert', 'class', 'style'] });
   host.addEventListener('mouseenter', () => clearTimeout(closeTimer)); host.addEventListener('mouseleave', delayedHide);
   host.addEventListener('pointerdown', () => { pinned = true; clearTimeout(closeTimer); });
   const onKey = event => { if (event.key === 'Escape') hide(); };
@@ -178,9 +208,19 @@
   document.addEventListener('keydown', onKey); document.addEventListener('pointerdown', onClick);
   window.addEventListener('resize', place); window.addEventListener('scroll', place, true);
   window[key] = {
-    update(payload) { if (state.sessionId !== payload.sessionId) { cache.clear(); hide(); } state = payload; turnIndex = window.__codexContextLensMatching.indexTurns(state.turns); schedule(); },
+    update(payload) {
+      if (!window.__codexContextLensMatching.acceptsView(payload, describeView())) { schedule(); return false; }
+      if (state.sessionId !== payload.sessionId || state.viewToken !== payload.viewToken) { cache.clear(); hide(); }
+      state = payload; requestedViewToken = null;
+      turnIndex = window.__codexContextLensMatching.indexTurns(state.turns); schedule(); return true;
+    },
     receive(payload) { const task = awaiting.get(payload.id); if (!task) return; clearTimeout(task.timer); awaiting.delete(payload.id); payload.error ? task.reject(new Error(payload.error)) : task.resolve(payload.report); },
-    status() { return { activeThreadId: threadId(), buttons: document.querySelectorAll(`[${marker}]`).length, sessionId: state.sessionId, turns: state.turns.length, diagnostics }; },
+    status() {
+      const view = describeView(), valid = window.__codexContextLensMatching.acceptsView(state, view);
+      return { ...view, boundViewToken: state.viewToken, sessionId: valid ? state.sessionId : null,
+        buttons: valid ? Array.from(document.querySelectorAll(`[${marker}]`)).filter(visible).length : 0,
+        turns: valid ? state.turns.length : 0, resolutionReason: state.resolutionReason, diagnostics };
+    },
     dispose() { observer.disconnect(); clearTimeout(scanTimer); clearTimeout(closeTimer); clearTimeout(openTimer); for (const task of awaiting.values()) { clearTimeout(task.timer); task.reject(new Error('插件已停止')); } awaiting.clear(); document.removeEventListener('keydown', onKey); document.removeEventListener('pointerdown', onClick); window.removeEventListener('resize', place); window.removeEventListener('scroll', place, true); document.querySelectorAll(`[${marker}]`).forEach(b => b.remove()); for (const scope of scopes) scope.removeAttribute(scopeMarker); scopes.clear(); buttonStyle.remove(); host.remove(); delete window[key]; }
   };
   return { installed: true };

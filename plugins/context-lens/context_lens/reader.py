@@ -301,6 +301,8 @@ class SessionStore:
         self._headers, self._reports = {}, {}
         self._paths, self._scan_at = [], None
         self.lock = threading.RLock()
+        from .routing import TurnSessions
+        self.turn_sessions = TurnSessions(self)
 
     def paths(self):
         if self._scan_at is None or time.monotonic() - self._scan_at > 3:
@@ -372,6 +374,10 @@ class SessionStore:
         if len(matches) != 1:
             raise ValueError("会话 ID 未找到或不唯一；请从列表选择完整 ID")
         return matches[0]
+
+    def resolve_view(self, view_id, turn_ids):
+        with self.lock:
+            return self.turn_sessions.resolve(view_id, turn_ids)
 
     def report(self, selector=None, turn_id=None):
         with self.lock:

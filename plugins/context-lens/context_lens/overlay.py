@@ -46,6 +46,34 @@ def trim_report(report):
     return {k: report[k] for k in ("session", "context", "latest_usage", "buckets", "notes")}
 
 
+def view_payload(store, state):
+    route = store.resolve_view(state.get("activeThreadId"), state.get("visibleTurnIds", []))
+    payload = {"viewToken": state.get("viewToken"), "viewId": state.get("activeThreadId"),
+               "sessionId": route["session_id"], "turns": [], "resolutionReason": route["reason"]}
+    if route["session_id"]:
+        try:
+            report = store.report(route["session_id"])
+            payload["turns"] = report["turns"]
+        except (OSError, ValueError):
+            payload.update(sessionId=None, resolutionReason="waiting_for_session_log")
+    return payload
+
+
+def deliver_view(client, store, state):
+    payload = view_payload(store, state)
+    client.evaluate("window.__codexContextLens.update(" + json.dumps(payload, ensure_ascii=False) + ")")
+    return {**state, "resolvedSessionId": payload["sessionId"], "routingReason": payload["resolutionReason"]}
+
+
+def view_report(store, state, request):
+    if request.get("view_token") != state.get("viewToken"):
+        raise ValueError("聊天已切换，请重新悬停当前回复")
+    route = store.resolve_view(state.get("activeThreadId"), state.get("visibleTurnIds", []))
+    if not route["session_id"] or request.get("session_id") != route["session_id"] or not request.get("turn_id"):
+        raise ValueError("无法确认这条消息所属的会话和轮次")
+    return trim_report(store.report(route["session_id"], request["turn_id"]))
+
+
 def watch(root, port):
     global STOPPED
     STOPPED = False
@@ -76,6 +104,7 @@ def watch(root, port):
                         window_states.pop(tid, None)
                 for target in discovered:
                     if target["id"] not in clients:
+                        c = None
                         try:
                             c = CDP(target["webSocketDebuggerUrl"])
                             c.call("Runtime.enable")
@@ -83,7 +112,7 @@ def watch(root, port):
                             c.evaluate(script)
                             clients[target["id"]] = c
                         except (OSError, RuntimeError, ValueError, ConnectionError):
-                            if "c" in locals():
+                            if c is not None:
                                 c.close()
                 app, pids = desktop() if not discovered else (None, None)
                 if not discovered and bootstrap.app is not None:
@@ -100,17 +129,7 @@ def watch(root, port):
                         # Reinstall after navigation/renderer replacement when needed.
                         client.evaluate(script)
                         state = client.evaluate("window.__codexContextLens.status()") or {}
-                        window_states[tid] = state
-                        sid = state.get("activeThreadId")
-                        if sid:
-                            try:
-                                report = store.report(sid)
-                                payload = {"sessionId": report["session"]["id"], "turns": report["turns"]}
-                            except (OSError, ValueError):
-                                payload = {"sessionId": sid, "turns": []}
-                        else:
-                            payload = {"sessionId": None, "turns": []}
-                        client.evaluate("window.__codexContextLens.update(" + json.dumps(payload, ensure_ascii=False) + ")")
+                        window_states[tid] = deliver_view(client, store, state)
                     incoming = list(client.events)
                     client.events.clear()
                     message = client.receive(.05)
@@ -120,11 +139,16 @@ def watch(root, port):
                         if event.get("method") != "Runtime.bindingCalled" or event.get("params", {}).get("name") != "__contextLensRequest":
                             continue
                         request = json.loads(event["params"]["payload"])
+                        if request.get("kind") == "view_changed":
+                            # Read a fresh plugin-only snapshot; queued events can
+                            # be stale after a fast chat switch.
+                            state = client.evaluate("window.__codexContextLens.status()") or {}
+                            window_states[tid] = deliver_view(client, store, state)
+                            continue
                         answer = {"id": request.get("id")}
                         try:
-                            if not request.get("session_id") or not request.get("turn_id"):
-                                raise ValueError("无法确认这条消息所属的会话和轮次")
-                            answer["report"] = trim_report(store.report(request["session_id"], request["turn_id"]))
+                            current = client.evaluate("window.__codexContextLens.status()") or {}
+                            answer["report"] = view_report(store, current, request)
                         except (OSError, ValueError) as exc:
                             answer["error"] = str(exc)
                         client.evaluate("window.__codexContextLens.receive(" + json.dumps(answer, ensure_ascii=False) + ")")

@@ -9,7 +9,7 @@
 <p align="center">
   <a href="https://github.com/Cloudkkk/codex-context-lens/actions/workflows/ci.yml"><img src="https://github.com/Cloudkkk/codex-context-lens/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT License"></a>
-  <img src="https://img.shields.io/badge/version-0.3.4-6366f1" alt="Version 0.3.4">
+  <img src="https://img.shields.io/badge/version-0.3.5-6366f1" alt="Version 0.3.5">
   <img src="https://img.shields.io/badge/platform-macOS-lightgrey" alt="macOS">
 </p>
 
@@ -32,6 +32,7 @@ Context Lens 是一个用于 macOS Codex / ChatGPT 桌面端的第三方本地�
 - **上下文分类**：用户消息、助手消息、工具调用与返回、Skills、基础指令、记忆指令、压缩摘要等。
 - **压缩感知**：使用日志中的替换历史重建上下文，避免把压缩前的数字套到新窗口。
 - **一键初始化**：通过插件设置入口启动监控，需要时自动正常退出、重开；Hook 仅用于可选的后续恢复。
+- **多会话与多窗口**：共享一个监控进程，每个窗口独立按真实轮次关联日志；本次桌面运行初始化一次即可，切换聊天无需重复 Setup。
 - **本地运行**：Python 标准库实现，只读 `~/.codex/sessions`，不需要额外服务或第三方 Python 依赖。
 
 分类目前只展示汇总。详细条目的展开入口暂时关闭，待内容归因更清楚后再加入。
@@ -40,7 +41,7 @@ Context Lens 是一个用于 macOS Codex / ChatGPT 桌面端的第三方本地�
 
 需要 macOS Codex / ChatGPT 桌面端；优先使用应用自带 Python，也兼容本机 Python 3.9+。
 
-1. 在 [最新 Release](https://github.com/Cloudkkk/codex-context-lens/releases/latest) 下载 **`Context-Lens-0.3.4-macOS.pkg`**，双击完成安装。
+1. 在 [最新 Release](https://github.com/Cloudkkk/codex-context-lens/releases/latest) 下载 **`Context-Lens-0.3.5-macOS.pkg`**，双击完成安装。
 2. 打开 Codex 的 Context Lens 插件详情，运行 **Setup** 技能。Setup 就是初始化；当前桌面界面可能通过「立即试用」进入设置聊天，并不一定显示单独的「初始化」按钮。
 3. 初始化会启动监控，需要调试端口时，在本次回复与其他可见本地任务结束后自动正常退出、带参数重开。**无需额外发送消息、先信任 Hook 或手动 ⌘Q。**
 

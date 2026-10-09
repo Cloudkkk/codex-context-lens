@@ -13,6 +13,6 @@ description: 自动启用、停止或修复 Codex 消息操作栏中的上下文
 
 `waiting_for_tasks` 表示重启已排队，此时简短回复并结束本轮，不能等待自己的 task_complete。`quit_cancelled`、`initialization_cancelled`、`initialization_timed_out` 或 `restart_failed` 应说明实际失败原因，不循环重启。`attached` 仅表示连接成功，未实际验证时不声称 hover 可用。
 
-`status.windows` 包含插件内部的会话和挂载计数。`buttons > 0` 表示按钮已挂载；`diagnostics.reason` 的 `no_turn_match` 表示文案或 ID 不能唯一匹配，`no_action_rows` 表示消息操作栏结构不兼容。不要把 `attached` 当作 hover 成功。0.2.2 的实际按钮和面板已由用户确认正常；后续故障仍需核对当前计数。
+`status.windows` 按 renderer 分别包含页面标识、解析后的 `resolvedSessionId`、`routingReason`、视图 token 和挂载计数。一个窗口 mounted 不代表全部聊天正常。共享监控支持多个窗口与聊天切换，不需要为每个会话运行 Setup。`buttons > 0` 表示按钮已挂载；`diagnostics.reason` 的 `no_turn_match` 表示文案或 ID 不能唯一匹配，`no_action_rows` 表示消息操作栏结构不兼容。不要把 `attached` 当作 hover 成功。0.2.2 的实际按钮和面板已由用户确认正常；后续故障仍需核对当前计数。
 
 保持只读：日志默认来自 `~/.codex/sessions`，不修改日志、应用包或账户设置。面板优先读取回复祖先节点的真实轮次 ID；真实 ID 对应日志暂未到达时等待，不回退到正文。仅缺少真实 ID 时使用旧 ID 和唯一正文匹配；跳过隐藏会话。不能确定对应轮次时不挂载。输入总量来自用量事件，分类仅是可见文本估算；不要把差额解释为精确工具占用。无需添加 MCP 聊天查询工具。

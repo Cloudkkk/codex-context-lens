@@ -43,7 +43,7 @@ def validate_plugin(archive):
             raise ValueError("Onboarding skill missing")
         for required in ("cli.py", "LICENSE", "context_lens/__init__.py",
                          "context_lens/overlay.py", "context_lens/cdp.py",
-                         "context_lens/reader.py", "context_lens/lifecycle.py",
+                         "context_lens/reader.py", "context_lens/lifecycle.py", "context_lens/routing.py",
                          "skills/context-lens/SKILL.md", "web/matching.js", "web/overlay.js",
                          "scripts/run-python.sh", "scripts/python-path.sh",
                          "skills/setup/SKILL.md", "context_lens/initialize.py"):
