@@ -40,3 +40,5 @@ jobs:
           node --check plugins/context-lens/web/matching.js
           node --check plugins/context-lens/web/overlay.js
           node --check plugins/context-lens/web/demo.js
+      - name: Build and validate distribution archives
+        run: python scripts/package.py --output-directory "$RUNNER_TEMP/context-lens-packages"
