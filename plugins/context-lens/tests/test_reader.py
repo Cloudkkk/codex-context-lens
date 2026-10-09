@@ -2,6 +2,7 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from context_lens.reader import inspect_session, SessionStore
 
@@ -36,6 +37,11 @@ class ReaderTests(unittest.TestCase):
 
     def write(self, records, tail=""):
         self.path.write_text("\n".join(json.dumps(r) for r in records) + "\n" + tail)
+
+    def test_first_scan_at_near_zero_monotonic_clock(self):
+        self.write(self.start + [usage(100)])
+        with patch('context_lens.reader.time.monotonic', return_value=0.01):
+            self.assertEqual(len(SessionStore(self.root).paths()), 1)
 
     def test_request_input_not_lifetime_or_output(self):
         self.write(self.start + [message("user", "HELLO"), message("assistant", "X" * 1000), usage(100, 50)])

@@ -299,11 +299,11 @@ class SessionStore:
     def __init__(self, root):
         self.root = Path(root).expanduser().resolve()
         self._headers, self._reports = {}, {}
-        self._paths, self._scan_at = [], 0
+        self._paths, self._scan_at = [], None
         self.lock = threading.RLock()
 
     def paths(self):
-        if time.monotonic() - self._scan_at > 3:
+        if self._scan_at is None or time.monotonic() - self._scan_at > 3:
             self._paths = sorted((p for p in self.root.rglob("*.jsonl") if p.resolve().is_relative_to(self.root)), key=lambda p: p.stat().st_mtime, reverse=True)
             self._scan_at = time.monotonic()
         return self._paths
