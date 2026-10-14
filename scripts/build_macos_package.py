@@ -31,7 +31,7 @@ def build(output, sign=None):
             keep = (name == ".agents/plugins/marketplace.json" or
                     name in ("README.md", "INSTALL.md", "LICENSE") or name.startswith("docs/") or
                     name.startswith("plugins/context-lens/"))
-            if not keep or "tests" in relative.parts or name.endswith("web/demo.js"):
+            if not keep or "tests" in relative.parts:
                 continue
             source = ROOT / relative
             if source.is_symlink() or not source.is_file():

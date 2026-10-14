@@ -11,7 +11,6 @@ overlay.json
 overlay.log
 *.zip
 work/
-/面板预览.png
-/图标位置预览.png
+/dist/
 
 *.pkg

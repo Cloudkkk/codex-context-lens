@@ -84,7 +84,7 @@ def main():
         if PLUGIN not in path.parents:
             continue
         relative = path.relative_to(PLUGIN)
-        if "tests" in relative.parts or relative == PurePosixPath("web/demo.js"):
+        if "tests" in relative.parts:
             continue
         plugin_files.append((ROOT / str(path), "context-lens/" + str(relative)))
     # Validate the plugin separately; the distributed ZIP is a marketplace

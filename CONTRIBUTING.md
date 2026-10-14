@@ -2,6 +2,15 @@
 
 欢迎提交问题、修复与改进。讨论新功能时，请说明它如何帮助用户在面板中理解上下文。
 
+## 目录结构
+
+- `plugins/context-lens/`：插件源码、技能、运行脚本与测试。
+- `installer/`：macOS 安装器与安装界面资源。
+- `scripts/`：打包脚本与安装器测试。
+- `docs/`：架构与手动安装说明。
+- `docs/assets/`：README 使用的标志和预览截图。
+- `dist/`：本地构建产物，不提交到 Git。
+
 ## 本地开发
 
 需要 Python 3.9+、Node.js 22+ 和 Git。Python 不需要第三方依赖。
@@ -15,7 +24,7 @@ node --test plugins/context-lens/tests/test_matching.cjs
 node --check plugins/context-lens/web/overlay.js
 ```
 
-打开 `面板预览.html` 可查看模拟消息中的同一份组件。需要真实接入时，在 macOS 源码目录运行：
+需要真实接入时，在 macOS 源码目录运行：
 
 ```sh
 python3 plugins/context-lens/cli.py enable
@@ -38,7 +47,7 @@ python3 plugins/context-lens/cli.py stop
 
 行为修复应增加能复现问题的测试。纯样式调整通常只需语法检查和实际交互验证，不需要重复实现本身的测试。
 
-调整 UI 时检查：默认隐藏、回复 hover、键盘聚焦、点击固定、Esc 关闭、聊天切换、深色模式，以及虚拟列表滚动后的重新挂载。模拟预览通过不等于真实桌面挂载通过，请在 PR 中写明验证范围。
+调整 UI 时检查：默认隐藏、回复 hover、键盘聚焦、点击固定、Esc 关闭、聊天切换、深色模式，以及虚拟列表滚动后的重新挂载。请在 PR 中写明真实桌面的验证范围。
 
 ## 提交 PR
 

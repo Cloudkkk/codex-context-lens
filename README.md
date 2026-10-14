@@ -15,15 +15,12 @@
 
 Context Lens 是一个用于 macOS Codex / ChatGPT 桌面端的第三方本地插件。它读取本机的 Codex 会话日志，在每条已完成回复的操作栏时间左侧显示上下文用量，并通过悬停面板展示分类汇总。
 
-入口采用 **16px SVG 图标和原生操作栏灰色**，默认隐藏，鼠标移到回复上才显示。查看用量无需发送聊天消息，也无需 API Key 或独立启动器。
-
 <p align="center">
-  <a href="#安装">安装</a> · <a href="#使用">使用</a> · <a href="#更新">更新</a> · <a href="#常见问题">常见问题</a> · <a href="CONTRIBUTING.md">贡献</a>
+  <a href="#安装与使用">安装与使用</a> · <a href="#更新">更新</a> · <a href="#常见问题">常见问题</a> · <a href="CONTRIBUTING.md">贡献</a>
 </p>
 
 ![Context Lens 面板预览](docs/assets/panel-preview.png)
 
-*预览使用模拟消息和用量，用于展示界面；实际面板读取你的本地会话日志。*
 
 ## 功能
 
@@ -37,36 +34,19 @@ Context Lens 是一个用于 macOS Codex / ChatGPT 桌面端的第三方本地�
 
 分类目前只展示汇总。详细条目的展开入口暂时关闭，待内容归因更清楚后再加入。
 
-## 安装
+## 安装与使用
 
 需要 macOS Codex / ChatGPT 桌面端；优先使用应用自带 Python，也兼容本机 Python 3.9+。
 
 1. 在 [最新 Release](https://github.com/Cloudkkk/codex-context-lens/releases/latest) 下载 **`Context-Lens-0.3.5-macOS.pkg`**，双击完成安装。
-2. 打开 Codex 的 Context Lens 插件详情，运行 **Setup** 技能。Setup 就是初始化；当前桌面界面可能通过「立即试用」进入设置聊天，并不一定显示单独的「初始化」按钮。
-3. 初始化会启动监控，需要调试端口时，在本次回复与其他可见本地任务结束后自动正常退出、带参数重开。**无需额外发送消息、先信任 Hook 或手动 ⌘Q。**
+2. 打开 Codex 的 Context Lens 插件详情，运行 **Setup** 初始化技能，等待提示和 codex 自动重启即可。
+3. 重开后，鼠标hover assistant消息下方的饼图按钮即可查看 context 使用量。
 
-重开后，将鼠标移到一条已完成回复，再悬停时间左侧的饼图按钮。
 
-当前包尚未签名或公证；如果 macOS 阻止打开，需要在「系统设置 → 隐私与安全性」中允许。完整说明见 [INSTALL.md](INSTALL.md)。
+注意⚠️：当前包尚未签名或公证，如果 macOS 阻止打开，需要在「系统设置 → 隐私与安全性」中允许。完整说明见 [INSTALL.md](INSTALL.md)。
 
 安装器自动完成当前用户的文件放置、来源登记、插件安装与启用，不设置登录启动项。初始化入口使用官方 `onboardingSkill`，会由 Codex 执行一次设置会话，可能需要宿主的执行权限审批；不是自行添加的原生脚本按钮。[官方说明](https://developers.openai.com/plugins/build/plugins#add-an-onboarding-skill)
 
-ZIP 保留给手动登记或开发使用，见 [手动安装](docs/manual-install.md)。Release ZIP 是 marketplace 来源目录，不用于「创建插件 → 上传 ZIP」。账户上传新版单插件包的接入尚未验证。
-
-## 使用
-
-![回复操作栏入口预览](docs/assets/toolbar-preview.png)
-
-| 操作 | 效果 |
-| --- | --- |
-| 鼠标移到回复上 | 显示时间左侧的图标与百分比 |
-| 悬停图标 | 打开这一轮的上下文汇总 |
-| 点击图标 | 固定面板，再次点击可关闭 |
-| 按 Esc 或点击面板外 | 关闭面板 |
-| 键盘聚焦入口 | 显示入口并打开面板 |
-| 关闭插件开关 | 约 5 秒内停止监控，撤掉面板并取消待执行的重开 |
-
-只有已完成、有用量记录且能够唯一匹配到日志轮次的回复才显示入口。正在生成的回复需要等结束；纯 CLI 会话不提供桌面悬停面板。
 
 ## 更新
 
