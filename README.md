@@ -43,7 +43,7 @@ Context Lens 是一个用于 macOS Codex / ChatGPT 桌面端的第三方本地�
 3. 重开后，鼠标hover assistant消息下方的饼图按钮即可查看 context 使用量。
 
 
-注意⚠️：当前包尚未签名或公证，如果 macOS 阻止打开，需要在「系统设置 → 隐私与安全性」中允许。完整说明见 [INSTALL.md](INSTALL.md)。
+注意⚠️：当前包尚未签名或公证，如果 macOS 阻止打开，需要在「系统设置 → 隐私与安全性」中允许。
 
 安装器自动完成当前用户的文件放置、来源登记、插件安装与启用，不设置登录启动项。初始化入口使用官方 `onboardingSkill`，会由 Codex 执行一次设置会话，可能需要宿主的执行权限审批；不是自行添加的原生脚本按钮。[官方说明](https://developers.openai.com/plugins/build/plugins#add-an-onboarding-skill)
 
