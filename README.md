@@ -124,5 +124,6 @@ Python 测试覆盖日志读取、初始化重启状态、监控与安装回滚�
 - [Codex-Monitor](https://github.com/KevinKE93/Codex-Monitor)：本地 CDP 接入思路与消息 DOM 标记。
 - [Context Window Inspector](https://github.com/androidZzT/context-window-inspector)：会话日志和上下文归因思路。
 - [OpenAI Plugins documentation](https://developers.openai.com/plugins/build/plugins)：插件格式、marketplace 与 hook 规范。
+- 感谢 [LINUX DO](https://linux.do) 社区。学 AI，上 L 站。
 
 本仓库代码独立实现，采用 [MIT License](LICENSE)。
