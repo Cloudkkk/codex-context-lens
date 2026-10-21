@@ -75,6 +75,19 @@ def usage_of(value):
     return result
 
 
+def turn_performance(turn):
+    turn = turn or {}
+    duration = turn.get("duration_ms")
+    valid_duration = (isinstance(duration, (int, float)) and not isinstance(duration, bool)
+                      and math.isfinite(duration) and duration > 0)
+    output = turn.get("output_tokens")
+    ready = turn.get("completed", False) and valid_duration and output is not None
+    return {"turn_id": turn.get("turn_id"), "output_tokens": output,
+            "duration_ms": duration if valid_duration else None,
+            "average_tps": output * 1000 / duration if ready else None,
+            "completed": turn.get("completed", False)}
+
+
 def iter_records(path):
     with path.open("rb") as handle:
         for line_no, raw in enumerate(handle, 1):
@@ -93,6 +106,7 @@ def inspect_session(path: Path, through_line=None):
     calls = {}
     title = ""
     usage_source, usage_timestamp, usage_line = None, None, None
+    usage_turn = None
     base_snapshot, context_snapshot, history_snapshot = None, None, None
     response_ids, turns, current_turn, last_assistant = set(), {}, None, None
     capacity_snapshot = None
@@ -145,6 +159,7 @@ def inspect_session(path: Path, through_line=None):
             current_turn = p.get("turn_id", current_turn)
         elif typ == "event_msg" and p.get("type") == "task_complete" and p.get("turn_id") in turns:
             turns[p["turn_id"]]["completed"] = True
+            turns[p["turn_id"]]["duration_ms"] = p.get("duration_ms")
             if last_assistant:
                 turns[p["turn_id"]].update(last_assistant)
         if typ == "token_usage_record" or (typ == "event_msg" and p.get("type") == "token_count"):
@@ -157,7 +172,8 @@ def inspect_session(path: Path, through_line=None):
                 continue
             # token_count commonly echoes the preceding token_usage_record; don't
             # replace its more current counters or consume a request boundary twice.
-            echo = typ == "event_msg" and usage_source == "token_usage_record" and usage_of(raw) == latest
+            echo = (typ == "event_msg" and usage_source == "token_usage_record"
+                    and usage_turn == current_turn and usage_of(raw) == latest)
             if echo:
                 continue
             rid = p.get("response_id")
@@ -167,6 +183,7 @@ def inspect_session(path: Path, through_line=None):
                 response_ids.add(rid)
             latest, total = usage_of(raw), usage_of(aggregate) if isinstance(aggregate, dict) else None
             usage_source, usage_timestamp, usage_line = typ, rec.get("timestamp"), line
+            usage_turn = current_turn
             # Outputs from this response appear before its usage event but are not
             # part of that response's input. Keep user/developer messages in that batch.
             generated = set(i for i in pending if history[i][0].get("role") == "assistant" or history[i][0].get("type") not in ("message", "function_call_output", "custom_tool_call_output"))
@@ -178,8 +195,13 @@ def inspect_session(path: Path, through_line=None):
                            "output": latest["output_tokens"], "capacity": current_window, "line": line})
             if current_turn:
                 previous = turns.get(current_turn, {})
+                turn_output, request_output = previous.get("output_tokens", 0), raw.get("output_tokens")
+                output_known = (isinstance(request_output, (int, float)) and not isinstance(request_output, bool)
+                                and math.isfinite(request_output) and request_output >= 0)
+                turn_output = turn_output + latest["output_tokens"] if turn_output is not None and output_known else None
                 turns[current_turn] = {**previous, "turn_id": current_turn, "usage_line": line,
                                        "used": latest["input_tokens"], "capacity": current_window,
+                                       "output_tokens": turn_output,
                                        "timestamp": usage_timestamp, "completed": previous.get("completed", False)}
                 if last_assistant:
                     turns[current_turn].update(last_assistant)
@@ -292,6 +314,7 @@ def inspect_session(path: Path, through_line=None):
                         "compactions": compact_count, "latest_compaction_line": compact_line,
                         "pending_items": len(pending), "estimate_scaled": scale < 1},
             "latest_usage": latest, "total_usage": total, "buckets": buckets,
+            "turn_performance": turn_performance(turns.get(current_turn)),
             "requests": points[-120:], "turns": list(turns.values()), "notes": notes, "read_at": time.time()}
 
 
@@ -395,6 +418,8 @@ class SessionStore:
                     raise ValueError("找不到这条消息对应的轮次")
                 report = inspect_session(path, turn["usage_line"])
                 report["selected_turn"] = turn
+                # Context stops at the last usage; timing arrives afterwards.
+                report["turn_performance"] = turn_performance(turn)
             else:
                 report = inspect_session(path)
             self._reports[key] = (stamp, report)

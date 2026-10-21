@@ -7,6 +7,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[2]
+PLUGIN_VERSION = json.loads((ROOT / "plugins/context-lens/.codex-plugin/plugin.json").read_text())["version"]
 SPEC = importlib.util.spec_from_file_location("setup", ROOT / "installer/setup.py")
 setup = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(setup)
@@ -24,7 +25,7 @@ class FakeCLI:
             return {"marketplaces": ([self.previous] if self.previous else [])}
         if arguments[:2] == ["plugin", "list"]:
             if self.add_count:
-                return {"installed": [{"pluginId": setup.PLUGIN_ID, "enabled": True, "version": "0.3.5"}]}
+                return {"installed": [{"pluginId": setup.PLUGIN_ID, "enabled": True, "version": PLUGIN_VERSION}]}
             return {"installed": ([self.old_plugin] if self.old_plugin else [])}
         if arguments[:2] == ["plugin", "add"]:
             self.add_count += 1
@@ -54,7 +55,7 @@ class InstallerTests(unittest.TestCase):
         verified = []
         result = setup.install(self.payload, self.destination, "codex", call=cli,
                                verify=lambda binary, catalog: verified.append(catalog))
-        self.assertEqual(result["version"], "0.3.5")
+        self.assertEqual(result["version"], PLUGIN_VERSION)
         self.assertTrue((self.destination / "plugins/context-lens/.codex-plugin/plugin.json").is_file())
         self.assertEqual(verified, [self.destination / ".agents/plugins/marketplace.json"])
         self.assertIn(["plugin", "marketplace", "add", str(self.destination), "--json"], cli.calls)

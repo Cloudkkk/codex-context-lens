@@ -149,3 +149,57 @@ test('late hover response cannot open the prior chat after switching', async t =
   assert.equal(f.api.status().sessionId, 'chat-b'); assert.equal(f.api.status().buttons, 1);
   assert.equal(f.doc.querySelector('#codex-context-lens-popover').style.display, 'none');
 });
+
+test('metrics show the selected historical turn TPS and duration without a tooltip', async t => {
+  const f = fixture('draft', ['old', 'new']); t.after(() => f.api.dispose());
+  f.api.update(payload(f, 'chat', ['old', 'new'])); await tick();
+  const buttons = f.doc.querySelectorAll('[data-context-lens-button]');
+  const panel = f.doc.querySelector('#codex-context-lens-popover').shadowRoot;
+  for (const [index, average_tps] of [[0, 10], [1, 100]]) {
+    buttons[index].events.focus();
+    const request = f.requests.at(-1);
+    assert.equal(request.turn_id, index === 0 ? 'old' : 'new');
+    f.api.receive({ id: request.id, report: {
+      session: { model: 'test' }, context: { used: 100, capacity: 1000, free: 900, percent: 10 },
+      buckets: [], latest_usage: { output_tokens: 5 },
+      turn_performance: { average_tps, output_tokens: 100, duration_ms: index === 0 ? 10000 : 1000 }
+    } });
+    await Promise.resolve();
+    const metrics = panel.querySelector('.usage').children;
+    assert.equal(metrics[4].children[1].textContent, `${average_tps.toFixed(1)} tok/s`);
+    assert.equal(metrics[5].children[1].textContent, `${index === 0 ? '10.0' : '1.0'} 秒`);
+    assert.equal(metrics[4].getAttribute('title'), null);
+    const foot = panel.querySelector('.foot');
+    assert.equal(foot.children[0].className, 'foot-model');
+    assert.equal(foot.children[1].className, 'foot-time');
+  }
+});
+
+test('legacy report without turn timing renders unknown TPS', async t => {
+  const f = fixture('draft', ['old']); t.after(() => f.api.dispose());
+  f.api.update(payload(f, 'chat', ['old'])); await tick();
+  f.doc.querySelector('[data-context-lens-button]').events.focus();
+  f.api.receive({ id: f.requests.at(-1).id, report: {
+    session: { model: 'test' }, context: { used: 100, capacity: 1000, free: 900, percent: 10 }, buckets: []
+  } });
+  await Promise.resolve();
+  const panel = f.doc.querySelector('#codex-context-lens-popover').shadowRoot;
+  assert.equal(panel.querySelector('.usage').children[4].children[1].textContent, '—');
+  assert.equal(panel.querySelector('.usage').children[5].children[1].textContent, '—');
+});
+
+test('six metrics preserve full input with cache and reasoning as subcounts', async t => {
+  const f = fixture('draft', ['old']); t.after(() => f.api.dispose());
+  f.api.update(payload(f, 'chat', ['old'])); await tick();
+  f.doc.querySelector('[data-context-lens-button]').events.focus();
+  f.api.receive({ id: f.requests.at(-1).id, report: {
+    session: { model: 'test' }, context: { used: 644583, capacity: 1000000, free: 355417, percent: 64.4583 }, buckets: [],
+    latest_usage: { input_tokens: 644583, output_tokens: 3574, reasoning_output_tokens: 1171,
+      cached_input_tokens: 638615, total_tokens: 648157 }
+  } });
+  await Promise.resolve();
+  const panel = f.doc.querySelector('#codex-context-lens-popover').shadowRoot;
+  const metrics = panel.querySelector('.usage').children;
+  assert.deepEqual(metrics.map(metric => metric.children.map(child => child.textContent)),
+    [['输入总量', '644,583'], ['输出', '3,574'], ['推理', '1,171'], ['缓存读取', '638,615'], ['平均速度', '—'], ['总耗时', '—']]);
+});

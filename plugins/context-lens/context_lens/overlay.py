@@ -43,7 +43,7 @@ def targets(port):
 
 
 def trim_report(report):
-    return {k: report[k] for k in ("session", "context", "latest_usage", "buckets", "notes")}
+    return {k: report[k] for k in ("session", "context", "latest_usage", "buckets", "notes", "turn_performance")}
 
 
 def view_payload(store, state):

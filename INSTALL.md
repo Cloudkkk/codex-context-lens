@@ -4,7 +4,7 @@
 
 ## 1. 下载并安装
 
-在 [GitHub 最新 Release](https://github.com/Cloudkkk/codex-context-lens/releases/latest) 的 Assets 下载 **Context-Lens-0.3.5-macOS.pkg**，双击并按 macOS 安装器完成安装。不要选择 Source code。
+在 [GitHub 最新 Release](https://github.com/Cloudkkk/codex-context-lens/releases/latest) 的 Assets 下载 **Context-Lens-0.3.6-macOS.pkg**，双击并按 macOS 安装器完成安装。不要选择 Source code。
 
 需要已安装的 Codex / ChatGPT 桌面端。优先使用应用自带 Python，也支持本机 Python 3.9+。
 

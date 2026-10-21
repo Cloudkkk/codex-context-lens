@@ -100,6 +100,67 @@ class ReaderTests(unittest.TestCase):
         self.assertEqual(store.report(sid, "turn-two")["context"]["used"], 300)
         self.assertEqual(store.report(sid)["turns"][0]["message_id"], "msg-one")
 
+    def test_turn_tps_sums_requests_and_deduplicates_usage(self):
+        first = usage(100, 40)
+        first["payload"]["response_id"] = "response-one"
+        second = usage(200, 60)
+        second["payload"]["response_id"] = "response-two"
+        self.write(self.start + [first, usage(100, 40, source="event_msg"), first,
+                                second, usage(200, 60, source="event_msg"),
+                                rec("event_msg", {"type": "task_complete", "turn_id": "turn-one",
+                                                  "duration_ms": 10000, "time_to_first_token_ms": 2000})])
+        performance = inspect_session(self.path)["turn_performance"]
+        self.assertEqual(performance["output_tokens"], 100)
+        self.assertEqual(performance["duration_ms"], 10000)
+        self.assertEqual(performance["average_tps"], 10)
+
+    def test_historical_tps_uses_its_own_completion_after_usage(self):
+        self.write(self.start + [usage(100, 40), usage(200, 60),
+                   rec("event_msg", {"type": "task_complete", "turn_id": "turn-one", "duration_ms": 10000}),
+                   rec("event_msg", {"type": "task_started", "turn_id": "turn-two"}), usage(300, 200),
+                   rec("event_msg", {"type": "task_complete", "turn_id": "turn-two", "duration_ms": 2000})])
+        store = SessionStore(self.root)
+        sid = self.start[0]["payload"]["id"]
+        first, second = store.report(sid, "turn-one"), store.report(sid, "turn-two")
+        self.assertEqual(first["turn_performance"]["average_tps"], 10)
+        self.assertEqual(first["turn_performance"]["output_tokens"], 100)
+        self.assertEqual(first["context"]["used"], 200)
+        self.assertEqual(second["turn_performance"]["average_tps"], 100)
+        from context_lens.overlay import trim_report
+        self.assertEqual(trim_report(first)["turn_performance"], first["turn_performance"])
+
+    def test_turn_tps_for_legacy_token_count_and_equal_usage_in_new_turn(self):
+        self.write(self.start + [usage(100, 40),
+                   rec("event_msg", {"type": "task_complete", "turn_id": "turn-one", "duration_ms": 2000}),
+                   rec("event_msg", {"type": "task_started", "turn_id": "turn-two"}),
+                   usage(100, 40, source="event_msg"), usage(200, 60, source="event_msg"),
+                   rec("event_msg", {"type": "task_complete", "turn_id": "turn-two", "duration_ms": 10000})])
+        self.assertEqual(inspect_session(self.path)["turn_performance"]["average_tps"], 10)
+
+    def test_turn_tps_missing_invalid_duration_or_incomplete_stays_unknown(self):
+        for duration in (None, 0, -1, True, "1000", float("inf"), float("nan")):
+            with self.subTest(duration=duration):
+                self.write(self.start + [usage(100, 40), rec("event_msg", {
+                    "type": "task_complete", "turn_id": "turn-one", "duration_ms": duration})])
+                self.assertIsNone(inspect_session(self.path)["turn_performance"]["average_tps"])
+        self.write(self.start + [usage(100, 40)])
+        self.assertIsNone(inspect_session(self.path)["turn_performance"]["average_tps"])
+
+    def test_turn_tps_zero_output_is_zero_and_cache_refreshes_on_completion(self):
+        records = self.start + [usage(100, 0)]
+        self.write(records)
+        store = SessionStore(self.root)
+        sid = self.start[0]["payload"]["id"]
+        self.assertIsNone(store.report(sid, "turn-one")["turn_performance"]["average_tps"])
+        self.write(records + [rec("event_msg", {"type": "task_complete", "turn_id": "turn-one", "duration_ms": 1000})])
+        self.assertEqual(store.report(sid, "turn-one")["turn_performance"]["average_tps"], 0)
+
+    def test_turn_tps_missing_output_is_unknown_rather_than_zero(self):
+        incomplete = rec("token_usage_record", {"usage": {"input_tokens": 100}})
+        self.write(self.start + [usage(100, 40), incomplete, usage(200, 60), rec("event_msg", {
+            "type": "task_complete", "turn_id": "turn-one", "duration_ms": 10000})])
+        self.assertIsNone(inspect_session(self.path)["turn_performance"]["average_tps"])
+
     def test_matching_prefix_keeps_markdown_lines_and_complete_link(self):
         reply = '回复里包含[本地插件](/Users/' + 'folder/' * 40 + 'plugin.zip)。\n\n- 第一项分类\n- 第二项分类'
         self.write(self.start + [message('assistant', reply), usage(100),

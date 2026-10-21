@@ -29,7 +29,9 @@
     *{box-sizing:border-box}.panel{width:min(420px,calc(100vw - 24px));max-height:min(690px,calc(100vh - 24px));overflow:auto;background:light-dark(#fff,#202126);color:light-dark(#24262b,#e8e9ee);border:1px solid light-dark(#e3e5e9,#3f424a);border-radius:14px;box-shadow:0 10px 42px #0003;padding:20px;font-size:13px;line-height:1.5}
     .head{display:flex;align-items:center;justify-content:space-between;gap:16px}.title{font-size:16px;font-weight:600}.value{font-size:15px;font-variant-numeric:tabular-nums;white-space:nowrap}.sub{font-size:11px;color:light-dark(#838791,#a7aab5);margin-top:5px}.pill{font-size:10px;padding:2px 6px;border-radius:5px;background:light-dark(#f0f3f7,#343843);margin-left:6px}
     .bar{display:flex;height:8px;border-radius:5px;background:light-dark(#f0f1f3,#383a40);overflow:hidden;margin:16px 0}.segment{min-width:0;height:100%;flex-shrink:0}.row{display:grid;grid-template-columns:16px minmax(0,1fr) auto 50px;gap:7px;align-items:center;min-height:32px}.dot{width:10px;height:10px;border-radius:3px}.name{font-size:13px}.num{font-variant-numeric:tabular-nums}.pct{text-align:right;color:light-dark(#878b93,#b0b4c0);font-variant-numeric:tabular-nums;font-size:12px}
-    details>summary{list-style:none;cursor:pointer}details>summary::-webkit-details-marker{display:none}.expand{color:light-dark(#8c929d,#abb1bd);font-size:10px;margin-left:5px}.items{padding:3px 0 8px 23px;font-size:11px;color:light-dark(#777e89,#a8adba)}.item{display:flex;justify-content:space-between;gap:12px;padding:3px 0}.item span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.divider{height:1px;background:light-dark(#edf0f4,#383c45);margin:13px 0}.mini{display:grid;grid-template-columns:1fr 1fr;gap:10px}.mini b{display:block;font-size:15px;font-weight:500;font-variant-numeric:tabular-nums}.note{font-size:11px;color:light-dark(#80858e,#a4a9b5);margin-top:12px}.warn{padding:9px;border-radius:7px;background:light-dark(#fff5e7,#493b28);font-size:11px;margin-top:10px}.close{border:0;background:transparent;color:inherit;font-size:18px;cursor:pointer;padding:0 3px}.foot{display:flex;justify-content:space-between;gap:8px;margin-top:12px;font-size:10px;color:light-dark(#979ca5,#a1a7b3)}.free{color:light-dark(#8b929e,#a4a9b5)}
+    .foot-model{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.foot-time{white-space:nowrap;flex-shrink:0}
+    .usage{display:grid;grid-template-columns:repeat(3,max-content);justify-content:space-between;gap:9px 12px}.metric{min-width:0;text-align:left}.metric-label{font-size:11px;color:light-dark(#838791,#a7aab5);margin-bottom:2px}.metric-value{font-size:13px;font-weight:400;line-height:1.3;font-variant-numeric:tabular-nums;white-space:nowrap}
+    details>summary{list-style:none;cursor:pointer}details>summary::-webkit-details-marker{display:none}.expand{color:light-dark(#8c929d,#abb1bd);font-size:10px;margin-left:5px}.items{padding:3px 0 8px 23px;font-size:11px;color:light-dark(#777e89,#a8adba)}.item{display:flex;justify-content:space-between;gap:12px;padding:3px 0}.item span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.divider{height:1px;background:light-dark(#edf0f4,#383c45);margin:13px 0}.note{font-size:11px;color:light-dark(#80858e,#a4a9b5);margin-top:12px}.warn{padding:9px;border-radius:7px;background:light-dark(#fff5e7,#493b28);font-size:11px;margin-top:10px}.close{border:0;background:transparent;color:inherit;font-size:18px;cursor:pointer;padding:0 3px}.foot{display:flex;justify-content:space-between;gap:8px;margin-top:12px;font-size:10px;color:light-dark(#979ca5,#a1a7b3)}.free{color:light-dark(#8b929e,#a4a9b5)}
   `;
   const panel = document.createElement('section');
   panel.className = 'panel'; panel.setAttribute('role', 'dialog');
@@ -38,6 +40,7 @@
   const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text !== undefined) n.textContent = text; return n; };
   const format = n => n == null ? '—' : n >= 1e6 ? (n / 1e6).toFixed(2) + 'M' : n >= 1000 ? (n / 1000).toFixed(1) + 'k' : String(n);
   const percent = n => n == null ? '—' : n.toFixed(1) + '%';
+  const exact = n => n == null ? '—' : n.toLocaleString('en-US');
   function threadId() {
     const row = document.querySelector('[data-app-action-sidebar-thread-row][data-app-action-sidebar-thread-active="true"], [data-app-action-sidebar-thread-row][aria-current="page"]');
     const composerIds = Array.from(document.querySelectorAll('[data-conversation-id]'))
@@ -76,7 +79,7 @@
     panel.replaceChildren();
     const c = report.context, u = report.latest_usage || {};
     const header = el('div', 'head');
-    header.append(el('div', 'title', 'Context window'), el('div', 'value', `${format(c.used)} / ${format(c.capacity)} (${percent(c.percent)})`));
+    header.append(el('div', 'title', '上下文窗口'), el('div', 'value', `${format(c.used)} / ${format(c.capacity)} (${percent(c.percent)})`));
     panel.append(header);
     const bar = el('div', 'bar');
     for (const b of report.buckets) { if (!b.tokens || !c.capacity) continue; const part = el('div', 'segment'); part.style.width = Math.min(100, b.tokens / c.capacity * 100) + '%'; part.style.background = b.color; part.title = b.label; bar.append(part); }
@@ -91,11 +94,21 @@
     const free = el('div', 'row free'), fdot = el('span', 'dot'); fdot.style.background = 'light-dark(#e6e9ee,#4a4e59)';
     free.append(fdot, el('span', 'name', '剩余空间'), el('span', 'num', format(c.free)), el('span', 'pct', c.capacity && c.free != null ? percent(c.free / c.capacity * 100) : '—')); panel.append(free);
     panel.append(el('div', 'divider'));
-    const mini = el('div', 'mini');
-    for (const [label, value] of [['缓存输入（含在输入内）', u.cached_input_tokens], ['输出（含推理）', u.output_tokens]]) { const item = el('div', 'sub', label); item.append(el('b', '', format(value))); mini.append(item); }
-    panel.append(mini);
+    const performance = report.turn_performance || {};
+    const tps = performance.average_tps == null ? '—' : performance.average_tps.toFixed(1) + ' tok/s';
+    const duration = performance.duration_ms == null ? '—' : (performance.duration_ms / 1000).toFixed(1) + ' 秒';
+    const usage = el('div', 'usage');
+    for (const [label, value] of [['输入总量', exact(u.input_tokens)], ['输出', exact(u.output_tokens)],
+      ['推理', exact(u.reasoning_output_tokens)], ['缓存读取', exact(u.cached_input_tokens)],
+      ['平均速度', tps], ['总耗时', duration]]) {
+      const metric = el('div', 'metric');
+      metric.append(el('div', 'metric-label', label), el('div', 'metric-value', value));
+      usage.append(metric);
+    }
+    panel.append(usage);
     if (c.estimate_scaled || c.used == null) panel.append(el('div', 'warn', c.used == null ? '暂无这轮请求的用量记录。' : '可见文本估算超过输入量，已按比例封顶。'));
-    const foot = el('div', 'foot'); foot.append(el('span', '', report.session.model), el('span', '', c.usage_timestamp ? new Date(c.usage_timestamp).toLocaleTimeString('zh-CN', { hour12: false }) : '等待日志'));
+    const foot = el('div', 'foot'); foot.append(el('span', 'foot-model', report.session.model),
+      el('span', 'foot-time', c.usage_timestamp ? new Date(c.usage_timestamp).toLocaleTimeString('zh-CN', { hour12: false }) : '等待日志'));
     panel.append(foot);
   }
   function ask(turnId) {
